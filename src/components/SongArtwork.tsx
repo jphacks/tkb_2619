@@ -53,9 +53,11 @@ export default function SongArtwork({ song, className = "" }: { song: Song; clas
           key={`${url}#${failCount}`}
           src={url}
           alt=""
+          // ブラウザ標準の画像ドラッグが始まると、投票カードのスワイプが効かなくなる
+          draggable={false}
           onLoad={() => setLoadedUrl(url)}
           onError={() => setTimeout(() => setFailures({ url, count: failCount + 1 }), 2000 * (failCount + 1))}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+          className={`pointer-events-none absolute inset-0 h-full w-full select-none object-cover transition-opacity duration-300 ${
             loaded ? "opacity-100" : "opacity-0"
           }`}
         />

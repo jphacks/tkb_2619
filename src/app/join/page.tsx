@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, Music, User } from "lucide-react";
+import { ChevronRight, User } from "lucide-react";
 import { AppHeader, outlineButton, primaryButton, Spinner, SpotifyLogo } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
 import { saveIdentity, useRoomIdentity } from "@/lib/room/identity";
@@ -77,7 +77,7 @@ function JoinRoom() {
               ? "いまはデモモード（この端末のブラウザ内だけで共有）です。別の端末で作ったルームには参加できません。"
               : "招待URLが正しいか確認してください。"}
           </p>
-          <Link href="/" className="mt-2 text-sm font-bold text-teal underline">
+          <Link href="/" className="mt-2 text-sm font-bold text-accent underline">
             トップへ戻る
           </Link>
         </div>
@@ -90,13 +90,8 @@ function JoinRoom() {
     <>
       <AppHeader title="ルームに参加" backHref="/" />
       <main className="flex flex-1 flex-col px-4 pb-8">
-        <section className="flex flex-col items-center rounded-2xl bg-white px-5 pb-8 pt-10 text-center shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-          <span className="relative text-teal">
-            <Music size={52} strokeWidth={2.2} />
-            <span className="absolute -left-5 -top-2 h-3 w-[2px] -rotate-45 rounded bg-teal" />
-            <span className="absolute -top-4 left-5 h-3 w-[2px] rounded bg-teal" />
-            <span className="absolute -right-4 -top-2 h-3 w-[2px] rotate-45 rounded bg-teal" />
-          </span>
+        <section className="flex flex-col items-center rounded-2xl bg-surface px-5 pb-8 pt-10 text-center">
+          <span className="font-display text-[32px] leading-none text-accent">ミューコネ</span>
           <h2 className="mt-5 text-[22px] font-bold">みんなの選曲ルーム</h2>
           <p className="mt-1.5 text-[14px] text-muted">
             {snapshot.members.length > 0 ? `${snapshot.members.length}人が参加中 · ` : ""}参加方法を選んでください
@@ -129,7 +124,7 @@ function JoinRoom() {
                   placeholder="例: たろう"
                   maxLength={20}
                   autoFocus
-                  className="mt-1.5 w-full rounded-xl border border-line bg-app px-4 py-3 text-[16px] font-normal outline-none focus:border-teal"
+                  className="mt-1.5 w-full rounded-xl border border-line bg-app px-4 py-3 text-[16px] font-normal outline-none focus:border-accent"
                 />
               </label>
               <button type="button" onClick={joinAsGuest} disabled={busy || !name.trim()} className={primaryButton}>

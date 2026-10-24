@@ -2,32 +2,38 @@
 
 @theme inline {
   --font-sans: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  /* アプリ名と大きな見出しだけに使う、ライブのフライヤーのような太い書体 */
+  --font-display: "Dela Gothic One", "Hiragino Sans", "Noto Sans JP", sans-serif;
 
-  --color-cream: #f3efe7;
-  --color-app: #fbfaf7;
-  --color-ink: #1e2326;
-  --color-muted: #6f767c;
-  --color-line: #e8e3da;
-  --color-teal: #1f5e5b;
-  --color-teal-dark: #174946;
-  --color-teal-soft: #e3efec;
+  /* テーマ「ナイト」: こげ茶の夜にオレンジが灯る */
+  --color-cream: #140d0a;
+  --color-app: #1e1410;
+  --color-surface: #2c1f18;
+  --color-ink: #fbefe4;
+  --color-muted: #c9ae9c;
+  --color-line: #3d2d24;
+  --color-accent: #ff8a3d;
+  --color-accent-dark: #ffa261;
+  --color-accent-soft: #4a2c1c;
+  --color-on-accent: #1e1410;
 
-  --color-best: #1f7a5c;
-  --color-best-soft: #ddf1e8;
-  --color-better: #2f6fb8;
-  --color-better-soft: #dce9f8;
-  --color-meh: #9a6a2c;
-  --color-meh-soft: #f6ead6;
-  --color-no: #555b61;
-  --color-no-soft: #eceef0;
+  --color-best: #ffa261;
+  --color-best-soft: #4a2c1c;
+  --color-better: #f6c76b;
+  --color-better-soft: #45361a;
+  --color-meh: #c3b2ec;
+  --color-meh-soft: #322a4a;
+  --color-no: #cdbfb6;
+  --color-no-soft: #3a2e28;
 
-  --color-heart: #d35d6e;
-  --color-heart-soft: #f9dfe3;
-  --color-crown: #c9952b;
-  --color-crown-soft: #fbefcb;
+  --color-heart: #ff8a99;
+  --color-heart-soft: #4a2228;
+  --color-crown: #f2c14e;
+  --color-crown-soft: #45361a;
 }
 
 body {
+  color-scheme: dark;
   background: var(--color-cream);
   color: var(--color-ink);
   font-family: var(--font-sans);

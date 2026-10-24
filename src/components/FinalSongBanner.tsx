@@ -18,15 +18,15 @@ export default function FinalSongBanner() {
       href={spotifyOpenUrl(item.song)}
       target="_blank"
       rel="noreferrer"
-      className="flex items-center gap-3 rounded-2xl bg-teal p-3 text-white shadow-md"
+      className="flex items-center gap-3 rounded-2xl bg-accent p-3 text-on-accent shadow-md"
     >
       <SongArtwork song={item.song} className="h-12 w-12 rounded-lg" />
       <span className="min-w-0 flex-1">
-        <span className="block text-[11px] font-bold text-white/70">♪ 次に流す曲</span>
+        <span className="block text-[11px] font-bold text-on-accent/70">♪ 次に流す曲</span>
         <span className="block truncate text-[15px] font-bold">{item.song.title}</span>
-        <span className="block truncate text-[12px] text-white/80">{item.song.artist}</span>
+        <span className="block truncate text-[12px] text-on-accent/80">{item.song.artist}</span>
       </span>
-      <span className="flex shrink-0 items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-[12px] font-bold">
+      <span className="flex shrink-0 items-center gap-1 rounded-lg bg-surface/15 px-2.5 py-1.5 text-[12px] font-bold">
         Spotifyで開く
         <ExternalLink size={13} />
       </span>

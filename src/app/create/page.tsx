@@ -36,7 +36,7 @@ function ChipRow<T extends string>({
                 aria-pressed={on}
                 onClick={() => toggle(o.id)}
                 className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-[14px] transition ${
-                  on ? "border-teal bg-teal font-bold text-white" : "border-line bg-white text-ink"
+                  on ? "border-accent bg-accent font-bold text-on-accent" : "border-line bg-surface text-ink"
                 }`}
               >
                 {on && <Check size={13} strokeWidth={3} />}
@@ -91,7 +91,7 @@ export default function CreateRoomPage() {
     <>
       <AppHeader title="ルームを作成" backHref="/" />
       <main className="flex flex-1 flex-col gap-4 px-4 pb-8">
-        <section className="rounded-2xl bg-white px-4 pb-1 pt-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+        <section className="rounded-2xl bg-surface px-4 pb-1 pt-4">
           <div className="flex items-center justify-between">
             <span className="text-[18px] font-bold">AIレコメンド</span>
             <div className="grid grid-cols-2 rounded-xl border border-line bg-app p-1">
@@ -102,7 +102,7 @@ export default function CreateRoomPage() {
                   onClick={() => setAiEnabled(on)}
                   disabled={Boolean(room)}
                   className={`w-[76px] rounded-lg py-2 text-[14px] font-bold transition ${
-                    aiEnabled === on ? "bg-teal text-white" : "text-muted"
+                    aiEnabled === on ? "bg-accent text-on-accent" : "text-muted"
                   }`}
                 >
                   {on ? "ON" : "OFF"}
@@ -138,7 +138,7 @@ export default function CreateRoomPage() {
                   onChange={(e) => set("other", e.target.value)}
                   placeholder="みんなで歌える、明るい曲がいい"
                   rows={3}
-                  className="w-full resize-none rounded-xl border border-line bg-white px-3.5 py-3 text-[15px] outline-none placeholder:text-muted/60 focus:border-teal"
+                  className="w-full resize-none rounded-xl border border-line bg-surface px-3.5 py-3 text-[15px] outline-none placeholder:text-muted/60 focus:border-accent"
                 />
               </div>
             </fieldset>
@@ -159,13 +159,13 @@ export default function CreateRoomPage() {
         {error && <p className="text-center text-[13px] text-heart">{error}</p>}
 
         {room && (
-          <section className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+          <section className="flex items-center gap-2 rounded-2xl bg-surface px-4 py-3">
             <span className="shrink-0 text-[14px] font-bold">招待URL</span>
             <span className="min-w-0 flex-1 truncate rounded-lg bg-app px-3 py-2 text-[13px] text-muted">{inviteUrl}</span>
             <button
               type="button"
               onClick={handleCopy}
-              className="flex shrink-0 items-center gap-1 rounded-lg border-[1.5px] border-teal px-3 py-1.5 text-[13px] font-bold text-teal"
+              className="flex shrink-0 items-center gap-1 rounded-lg border-[1.5px] border-accent px-3 py-1.5 text-[13px] font-bold text-accent"
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? "済" : "コピー"}

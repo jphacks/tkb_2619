@@ -3,14 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Car, ChevronRight, Mic, Music, PartyPopper } from "lucide-react";
+import { ArrowRight, Car, Mic, PartyPopper } from "lucide-react";
 import { primaryButton } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
 
-const SCENE_CARDS = [
-  { Icon: Mic, title: "カラオケ", gap: "世代のギャップ", body: "上司と部下でも、一緒に歌える曲が見つかる" },
-  { Icon: PartyPopper, title: "パーティー", gap: "国籍のギャップ", body: "留学生や旅行者とも盛り上がれる曲を" },
-  { Icon: Car, title: "ドライブ", gap: "ジャンルのギャップ", body: "同乗者みんなの好みに合う曲を流そう" },
+const SCENES = [
+  { Icon: Mic, title: "カラオケ" },
+  { Icon: PartyPopper, title: "パーティー" },
+  { Icon: Car, title: "ドライブ" },
 ];
 
 /** 招待URLでもルームIDだけでも受け付ける */
@@ -27,56 +27,50 @@ export default function HomePage() {
   const roomId = parseRoomId(invite);
 
   return (
-    <main className="flex flex-1 flex-col px-5 pb-10 pt-12">
-      <div className="flex flex-col items-center text-center">
-        <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-teal text-white shadow-md">
-          <Music size={32} />
-        </span>
-        <h1 className="mt-4 text-[28px] font-black tracking-tight">musicconnect</h1>
-        <p className="mt-1 text-[15px] font-medium text-muted">音楽で人と人を繋ぐ</p>
-        <p className="mt-6 text-[15px] leading-relaxed">
-          共通の一曲が、心を繋ぐ。
-          <br />
-          みんなが知っている曲・聴きたい曲を、投票で選ぼう。
-        </p>
-      </div>
+    <main className="flex flex-1 flex-col px-6 pb-10 pt-16">
+      <h1 className="font-display text-[52px] leading-none text-accent">ミューコネ</h1>
+      <p className="mt-2 text-[13px] font-bold tracking-[0.2em] text-muted">MusiConnect</p>
+      <p className="mt-5 text-[22px] font-bold leading-snug">
+        共通の一曲が、
+        <br />
+        心を繋ぐ。
+      </p>
+      <p className="mt-3 text-[14px] leading-relaxed text-muted">
+        みんなが知っている曲、聴きたい曲を
+        <br />
+        投票で決めよう。
+      </p>
 
-      <div className="mt-8 flex flex-col gap-2.5">
-        {SCENE_CARDS.map(({ Icon, title, gap, body }) => (
-          <div key={title} className="flex items-center gap-3.5 rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-soft text-teal">
-              <Icon size={21} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-[15px] font-bold">
-                {title}
-                <span className="ml-2 text-[12px] font-medium text-muted">× {gap}</span>
-              </p>
-              <p className="text-[13px] text-muted">{body}</p>
-            </div>
-          </div>
+      <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[15px] font-bold">
+        {SCENES.map(({ Icon, title }) => (
+          <li key={title} className="flex items-center gap-1.5">
+            <Icon size={18} className="text-accent" />
+            {title}
+          </li>
         ))}
-      </div>
+      </ul>
 
-      <Link href="/create" className={`${primaryButton} mt-8`}>
-        ルームを作成
-        <ChevronRight size={20} />
+      <div className="flex-1" />
+
+      <Link href="/create" className={`${primaryButton} mt-10`}>
+        ルームを作る
+        <ArrowRight size={20} />
       </Link>
 
-      <div className="mt-6 rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-        <p className="text-[14px] font-bold">招待されたルームに参加</p>
+      <div className="mt-8 border-t border-line pt-5">
+        <p className="text-[13px] text-muted">招待された人はこちら</p>
         <div className="mt-2.5 flex gap-2">
           <input
             value={invite}
             onChange={(e) => setInvite(e.target.value)}
             placeholder="招待URL またはルームID"
-            className="min-w-0 flex-1 rounded-xl border border-line bg-app px-3.5 py-3 text-[15px] outline-none focus:border-teal"
+            className="min-w-0 flex-1 rounded-xl border border-line bg-app px-3.5 py-3 text-[15px] outline-none focus:border-accent"
           />
           <button
             type="button"
             disabled={!roomId}
             onClick={() => roomId && router.push(`/join?room=${roomId}`)}
-            className="shrink-0 rounded-xl bg-teal px-4 text-[14px] font-bold text-white disabled:opacity-40"
+            className="shrink-0 rounded-xl bg-accent px-4 text-[14px] font-bold text-on-accent disabled:opacity-40"
           >
             参加
           </button>

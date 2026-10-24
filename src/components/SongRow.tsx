@@ -30,7 +30,7 @@ export function SongRow({
         onClick={onToggle}
         disabled={busy}
         className={`flex shrink-0 items-center gap-1 rounded-xl border-[1.5px] px-3.5 py-2 text-[13px] font-bold transition disabled:opacity-60 ${
-          added ? "border-teal bg-teal text-white" : "border-teal text-teal hover:bg-teal-soft"
+          added ? "border-accent bg-accent text-on-accent" : "border-accent text-accent hover:bg-accent-soft"
         }`}
       >
         {added ? <Check size={15} strokeWidth={3} /> : <Plus size={15} strokeWidth={3} />}

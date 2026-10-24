@@ -89,7 +89,7 @@ export default function AddSongsPage() {
     <>
       <AppHeader title="曲を候補に追加" backHref={`/room?room=${roomId}`} />
       <main className="flex flex-1 flex-col px-4 pb-6">
-        <div className="flex items-center gap-2.5 rounded-2xl border border-line bg-white px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] focus-within:border-teal">
+        <div className="flex items-center gap-2.5 rounded-2xl border border-line bg-surface px-4 py-3.5 focus-within:border-accent">
           <Search size={22} className="shrink-0 text-ink" />
           <input
             value={input}
@@ -102,7 +102,7 @@ export default function AddSongsPage() {
               type="button"
               aria-label="クリア"
               onClick={() => setInput("")}
-              className="flex h-6 w-6 items-center justify-center rounded-full bg-muted/50 text-white"
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-muted/40 text-app"
             >
               <X size={15} strokeWidth={3} />
             </button>
@@ -112,7 +112,7 @@ export default function AddSongsPage() {
         {typed && (
           <section className="mt-5">
             <h2 className="text-[17px] font-bold">検索結果</h2>
-            <div className="mt-1 divide-y divide-line rounded-2xl bg-white px-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+            <div className="mt-1 divide-y divide-line rounded-2xl bg-surface px-4">
               {searching && <p className="py-5 text-center text-[13px] text-muted">検索中…</p>}
               {showingResults && search.error && (
                 <p className="py-5 text-center text-[13px] text-heart">検索に失敗しました。少し待ってからもう一度お試しください。</p>
@@ -128,13 +128,13 @@ export default function AddSongsPage() {
         <section className="mt-6 border-t border-line pt-5">
           <h2 className="text-[19px] font-bold">あなたへのおすすめ</h2>
           <p className="mt-0.5 text-[13px] text-muted">Spotifyに保存していない曲も、好みから提案</p>
-          <p className="mt-3 flex items-center gap-2 rounded-xl bg-teal-soft px-3.5 py-2.5 text-[13px] font-medium text-teal">
+          <p className="mt-3 flex items-center gap-2 rounded-xl bg-accent-soft px-3.5 py-2.5 text-[13px] font-medium text-accent">
             <Sparkles size={17} />
             {snapshot.candidates.some((c) => c.memberId === me.id)
               ? "保存した曲・アーティストをもとに"
               : "このルームの条件をもとに（曲を追加すると好みに合わせて変わります）"}
           </p>
-          <div className="mt-2 divide-y divide-line rounded-2xl bg-white px-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+          <div className="mt-2 divide-y divide-line rounded-2xl bg-surface px-4">
             {recommendations.length === 0 ? (
               <p className="py-5 text-center text-[13px] text-muted">おすすめはまだありません</p>
             ) : (
