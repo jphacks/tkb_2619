@@ -64,7 +64,7 @@ export default function AiPicksPanel() {
       </div>
 
       {status.kind === "loading" ? (
-        <p className="mt-2 text-[13px] text-muted">AIがみんなの好みから選曲中…（10秒ほどかかります）</p>
+        <p className="mt-2 text-[13px] text-muted">AIがみんなの好みから選曲中…（混んでいると1分ほどかかります）</p>
       ) : picks.length > 0 ? (
         <>
           <p className="mt-2 text-[13px] leading-relaxed">

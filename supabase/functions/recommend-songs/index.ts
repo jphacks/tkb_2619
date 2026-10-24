@@ -6,10 +6,15 @@
 //
 // 必要な Secrets（Supabase ダッシュボード → Edge Functions → Secrets）
 //   GEMINI_API_KEY  Google AI Studio で発行したキー（必須）
-//   GEMINI_MODEL    使うモデル（任意。既定は gemini-3.8-flash）
+//   GEMINI_MODEL    使うモデル（任意。既定は gemini-3.5-flash-lite）
 
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
-const DEFAULT_MODEL = "gemini-3.8-flash";
+// 画面で待てる速さを優先して、最速・低コストのモデルを既定にする
+// （gemini-3.8-flash は混雑時に1分以上かかり、Edge Function の150秒制限に達することがあった）
+const DEFAULT_MODEL = "gemini-3.5-flash-lite";
+/** 1回あたりの待ち時間。混雑・遅延時は1回だけやり直しても150秒の制限に収まるようにする */
+const ATTEMPT_TIMEOUT_MS = 40_000;
+const RETRY_DELAY_MS = 1_500;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -138,20 +143,45 @@ Deno.serve(async (req) => {
     return json({ error: "リクエストのJSONが不正です" }, 400);
   }
 
-  const res = await fetch(`${GEMINI_ENDPOINT}/${model}:generateContent`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-      contents: [{ role: "user", parts: [{ text: buildPrompt(request) }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: RESPONSE_SCHEMA,
-        temperature: 0.7,
-      },
-    }),
+  const payload = JSON.stringify({
+    systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+    contents: [{ role: "user", parts: [{ text: buildPrompt(request) }] }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: RESPONSE_SCHEMA,
+      temperature: 0.7,
+    },
   });
 
+  // 混雑（503/429）や応答の遅れは一時的なことが多いので、1回だけやり直す
+  let res: Response | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      res = await fetch(`${GEMINI_ENDPOINT}/${model}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: payload,
+        signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
+      });
+    } catch (error) {
+      const timedOut = error instanceof DOMException && (error.name === "TimeoutError" || error.name === "AbortError");
+      if (timedOut && attempt === 0) continue;
+      return json(
+        { error: timedOut ? "Gemini の応答が時間内に返りませんでした（混雑している可能性があります）" : "Gemini に接続できませんでした" },
+        504
+      );
+    }
+    if ((res.status === 503 || res.status === 429) && attempt === 0) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+      continue;
+    }
+    break;
+  }
+  if (!res) return json({ error: "Gemini の応答が時間内に返りませんでした（混雑している可能性があります）" }, 504);
+
+  if (res.status === 503 || res.status === 429) {
+    return json({ error: "Gemini が混雑しています。少し待ってから「AIに聞き直す」を押してください" }, 503);
+  }
   if (!res.ok) {
     // エラー本文にキーは含まれないが、念のため先頭だけ返す
     const detail = (await res.text()).slice(0, 300);
