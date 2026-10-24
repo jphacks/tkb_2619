@@ -12,6 +12,7 @@ create table if not exists rooms (
   conditions jsonb not null default '{}'::jsonb,
   host_member_id text,
   final_song_id text,
+  ai_picks jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
 

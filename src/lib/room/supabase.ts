@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { CandidateEntry, Member, Room, VoteEntry } from "@/types";
+import type { AiPick, CandidateEntry, Member, Room, VoteEntry } from "@/types";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/config";
 import { generateMemberId, generateRoomId, parseConditions, type RoomBackend } from "./backend";
 
@@ -16,6 +16,28 @@ function db(): SupabaseClient {
   return client;
 }
 
+/**
+ * Supabase Edge Function を呼ぶ（AIのAPIキーはFunction側の Secrets にだけ置く）。
+ * Function が返したエラーメッセージ（{ error }）があればそれを投げる。
+ */
+export async function invokeEdgeFunction<T>(name: string, body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await db().functions.invoke(name, { body });
+  if (error) {
+    // 関数がまだデプロイされていない・通信できない場合（HTTPの応答自体がない）
+    if (error.name === "FunctionsFetchError" || error.name === "FunctionsRelayError") {
+      throw new Error("AIの機能（Edge Function）に接続できませんでした。デプロイされているか確認してください");
+    }
+    let message = error.message;
+    const context = (error as { context?: Response }).context;
+    if (context && typeof context.json === "function") {
+      const detail = await context.json().catch(() => null);
+      if (detail?.error) message = detail.error;
+    }
+    throw new Error(message);
+  }
+  return data as T;
+}
+
 function check<T>({ data, error }: { data: T; error: { message: string } | null }): T {
   if (error) throw new Error(error.message);
   return data;
@@ -27,6 +49,8 @@ interface RoomRow {
   conditions: unknown;
   host_member_id: string | null;
   final_song_id: string | null;
+  /** supabase/migrations の ai_picks 追加前のDBでは存在しない */
+  ai_picks?: unknown;
   created_at: string;
 }
 
@@ -62,6 +86,7 @@ const toRoom = (r: RoomRow): Room => ({
   conditions: parseConditions(r.conditions),
   hostMemberId: r.host_member_id,
   finalSongId: r.final_song_id,
+  aiPicks: Array.isArray(r.ai_picks) ? (r.ai_picks as AiPick[]) : [],
   createdAt: r.created_at,
 });
 
@@ -160,6 +185,10 @@ export const supabaseBackend: RoomBackend = {
 
   async setFinalSong(roomId, songId) {
     check(await db().from("rooms").update({ final_song_id: songId }).eq("id", roomId));
+  },
+
+  async setAiPicks(roomId, picks) {
+    check(await db().from("rooms").update({ ai_picks: picks }).eq("id", roomId));
   },
 
   async fetchSnapshot(roomId) {

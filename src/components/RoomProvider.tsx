@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { Member, RoomSnapshot } from "@/types";
 import { roomBackend } from "@/lib/room";
 import { useRoomIdentity } from "@/lib/room/identity";
-import { CATALOG } from "@/lib/music-source";
+import { CATALOG, normalizeKey } from "@/lib/music-source";
 import { applyArtistMeta, lookupArtistMeta } from "@/lib/music-source/musicbrainz";
 import { canonicalArtist } from "@/lib/music-source/normalize";
 import { recommendForRoom, type Recommendation } from "@/lib/logic/recommend";
@@ -129,7 +129,13 @@ export default function RoomProvider({ children }: { children: React.ReactNode }
   const view = useMemo<RoomView | null>(() => {
     if (!snapshot || !me || !roomId || state?.status !== "ready") return null;
     // 投票は件数で区切らないので、条件に合う曲はすべて候補に入れる（並びは合う順）
-    const aiRecommendations = recommendForRoom(snapshot.room, snapshot.candidates, CATALOG, CATALOG.length);
+    const ruleBased = recommendForRoom(snapshot.room, snapshot.candidates, CATALOG, CATALOG.length);
+    // AI（Gemini）のおすすめがあれば先頭に置き、ルールベースの提案はその後ろに続ける
+    const fromAi: Recommendation[] = snapshot.room.aiEnabled
+      ? snapshot.room.aiPicks.map((pick, i) => ({ song: pick.song, score: Math.max(0.6, 1 - i * 0.03), reason: pick.reason }))
+      : [];
+    const aiKeys = new Set(fromAi.map((r) => normalizeKey(r.song)));
+    const aiRecommendations = [...fromAi, ...ruleBased.filter((r) => !aiKeys.has(normalizeKey(r.song)))];
     const pool = buildCandidatePool(snapshot, aiRecommendations);
     return {
       roomId,

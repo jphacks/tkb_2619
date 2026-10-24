@@ -1,5 +1,5 @@
 import { EMPTY_CONDITIONS, LEGACY_AGE_GROUPS } from "@/types";
-import type { AgeGroup, CandidateEntry, Member, Room, RoomConditions, RoomSnapshot, Song, VoteScore } from "@/types";
+import type { AgeGroup, AiPick, CandidateEntry, Member, Room, RoomConditions, RoomSnapshot, Song, VoteScore } from "@/types";
 
 export interface NewRoomInput {
   aiEnabled: boolean;
@@ -48,6 +48,8 @@ export interface RoomBackend {
   setVote(roomId: string, memberId: string, songId: string, score: VoteScore | null): Promise<void>;
   deleteVote(roomId: string, memberId: string, songId: string): Promise<void>;
   setFinalSong(roomId: string, songId: string | null): Promise<void>;
+  /** AIのおすすめを保存する（全員が同じ結果を見られるように） */
+  setAiPicks(roomId: string, picks: AiPick[]): Promise<void>;
   fetchSnapshot(roomId: string): Promise<RoomSnapshot | null>;
   /** 変更があったら onChange を呼ぶ。戻り値で購読解除 */
   subscribe(roomId: string, onChange: () => void): () => void;

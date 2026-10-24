@@ -116,7 +116,7 @@ export const GENDERS: { id: Gender; label: string }[] = [
 /** 曲の雰囲気タグ（「その他」の自由入力と照合する） */
 export type Mood = "upbeat" | "singalong" | "romantic" | "chill" | "emotional" | "nostalgic" | "summer";
 
-export type SongOrigin = "catalog" | "spotify" | "musicbrainz" | "itunes";
+export type SongOrigin = "catalog" | "spotify" | "musicbrainz" | "itunes" | "ai";
 
 /** 楽曲（Spotify / MusicBrainz / カタログの違いを吸収した形） */
 export interface Song {
@@ -155,6 +155,12 @@ export interface RoomConditions {
 
 export const EMPTY_CONDITIONS: RoomConditions = { genders: [], genres: [], nationalities: [], ageGroups: [], other: "" };
 
+/** AI（Gemini）が提案した曲。ルームに保存して全員で同じものを使う */
+export interface AiPick {
+  song: Song;
+  reason: string;
+}
+
 export interface Room {
   id: string;
   aiEnabled: boolean;
@@ -162,6 +168,8 @@ export interface Room {
   hostMemberId: string | null;
   /** 曲を流す人が最後に選んだ曲 */
   finalSongId: string | null;
+  /** AIのおすすめ（まだ聞いていなければ空） */
+  aiPicks: AiPick[];
   createdAt: string;
 }
 

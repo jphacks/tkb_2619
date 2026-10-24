@@ -6,6 +6,7 @@ import { Check, Copy, Plus, UserPlus } from "lucide-react";
 import { AppHeader, TabBar, primaryButton } from "@/components/ui";
 import { useRoom } from "@/components/RoomProvider";
 import FinalSongBanner from "@/components/FinalSongBanner";
+import AiPicksPanel from "@/components/AiPicksPanel";
 import { roomBackend } from "@/lib/room";
 import { BASE_PATH } from "@/lib/config";
 import { addDemoMembers } from "@/lib/demo";
@@ -63,6 +64,8 @@ export default function RoomHubPage() {
             {members.map((m) => (m.id === me.id ? `${m.name}（あなた）` : m.name)).join("、")}
           </p>
         </section>
+
+        <AiPicksPanel />
 
         <Link href={`/room/add?room=${roomId}`} className={primaryButton}>
           <Plus size={20} />

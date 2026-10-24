@@ -32,7 +32,14 @@ function load(roomId: string): RoomSnapshot | null {
   const raw = localStorage.getItem(keyFor(roomId));
   if (!raw) return null;
   const snapshot = JSON.parse(raw) as RoomSnapshot;
-  return { ...snapshot, room: { ...snapshot.room, conditions: parseConditions(snapshot.room.conditions) } };
+  return {
+    ...snapshot,
+    room: {
+      ...snapshot.room,
+      conditions: parseConditions(snapshot.room.conditions),
+      aiPicks: Array.isArray(snapshot.room.aiPicks) ? snapshot.room.aiPicks : [],
+    },
+  };
 }
 
 function update(roomId: string, mutate: (snapshot: RoomSnapshot) => void) {
@@ -49,7 +56,7 @@ export const localBackend: RoomBackend = {
   kind: "local",
 
   async createRoom(input) {
-    const room = { id: generateRoomId(), ...input, hostMemberId: null, finalSongId: null, createdAt: now() };
+    const room = { id: generateRoomId(), ...input, hostMemberId: null, finalSongId: null, aiPicks: [], createdAt: now() };
     localStorage.setItem(keyFor(room.id), JSON.stringify({ room, members: [], candidates: [], votes: [] }));
     return room;
   },
@@ -109,6 +116,12 @@ export const localBackend: RoomBackend = {
   async setFinalSong(roomId, songId) {
     update(roomId, (s) => {
       s.room.finalSongId = songId;
+    });
+  },
+
+  async setAiPicks(roomId, picks) {
+    update(roomId, (s) => {
+      s.room.aiPicks = picks;
     });
   },
 
