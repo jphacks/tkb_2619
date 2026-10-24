@@ -21,7 +21,7 @@ export default function AddSongsPage() {
   const [recommendations] = useState(() => recommendForMember(me.id, snapshot.room, snapshot.candidates, CATALOG));
 
   const myEntries = useMemo(
-    () => new Map(snapshot.candidates.filter((c) => c.memberId === me.id).map((c) => [normalizeKey(c.song), c])),
+    () => new Map(snapshot.candidates.filter((c) => c.memberId === me.id && c.source !== "ai").map((c) => [normalizeKey(c.song), c])),
     [snapshot.candidates, me.id]
   );
   const knownArtists = useMemo(() => new Set(snapshot.candidates.map((c) => c.song.artist)), [snapshot.candidates]);
@@ -130,7 +130,7 @@ export default function AddSongsPage() {
           <p className="mt-0.5 text-[13px] text-muted">Spotifyに保存していない曲も、好みから提案</p>
           <p className="mt-3 flex items-center gap-2 rounded-xl bg-accent-soft px-3.5 py-2.5 text-[13px] font-medium text-accent">
             <Sparkles size={17} />
-            {snapshot.candidates.some((c) => c.memberId === me.id)
+            {snapshot.candidates.some((c) => c.memberId === me.id && c.source !== "ai")
               ? "保存した曲・アーティストをもとに"
               : "このルームの条件をもとに（曲を追加すると好みに合わせて変わります）"}
           </p>

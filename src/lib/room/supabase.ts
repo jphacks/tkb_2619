@@ -16,6 +16,13 @@ function db(): SupabaseClient {
   return client;
 }
 
+/** Supabase Edge Function を呼ぶ（例: Gemini を使う recommend）。失敗したら例外 */
+export async function invokeEdgeFunction<T>(name: string, body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await db().functions.invoke(name, { body });
+  if (error) throw error;
+  return data as T;
+}
+
 function check<T>({ data, error }: { data: T; error: { message: string } | null }): T {
   if (error) throw new Error(error.message);
   return data;

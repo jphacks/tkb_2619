@@ -46,6 +46,8 @@ function buildProfile(candidates: CandidateEntry[]) {
   const artistWeight = new Map<string, number>();
   let total = 0;
   for (const c of candidates) {
+    // AIが選んだ曲は参加者の好みではないので、好みの推定に混ぜない
+    if (c.source === "ai") continue;
     const w = c.source === "spotify" ? 0.5 + c.weight : 1;
     total += w;
     if (c.song.genre !== "other") genreWeight.set(c.song.genre, (genreWeight.get(c.song.genre) ?? 0) + w);
@@ -154,7 +156,7 @@ export function recommendForMember(
   limit = 6
 ): Recommendation[] {
   const existing = new Set(candidates.map((x) => normalizeKey(x.song)));
-  const mine = candidates.filter((c) => c.memberId === memberId).sort((a, b) => b.weight - a.weight);
+  const mine = candidates.filter((c) => c.memberId === memberId && c.source !== "ai").sort((a, b) => b.weight - a.weight);
   if (mine.length === 0) {
     return recommendForRoom({ ...room, aiEnabled: true }, candidates, catalog, limit);
   }

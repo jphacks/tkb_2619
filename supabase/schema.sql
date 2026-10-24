@@ -28,7 +28,7 @@ create table if not exists candidates (
   member_id text not null references members (id) on delete cascade,
   song_id text not null,
   song jsonb not null,
-  source text not null check (source in ('spotify', 'manual')),
+  source text not null check (source in ('spotify', 'manual', 'ai')),
   weight real not null default 0,
   added_at timestamptz not null default now(),
   primary key (room_id, member_id, song_id)

@@ -139,6 +139,8 @@ export interface Song {
   /** MusicBrainzからジャンル・国を補完する必要があるか */
   metaStatus?: "pending" | "done";
   mbArtistId?: string;
+  /** AIレコメンド（Gemini）がこの曲を選んだ理由 */
+  aiReason?: string;
 }
 
 /**
@@ -179,7 +181,8 @@ export interface CandidateEntry {
   memberId: string;
   songId: string;
   song: Song;
-  source: "spotify" | "manual";
+  /** ai: ホストの端末がGeminiに選ばせた曲（誰かが持ち込んだ曲としては数えない） */
+  source: "spotify" | "manual" | "ai";
   /** Spotifyの「過去1ヶ月によく聴いた順位」から求めた重み（0〜1）。手動追加は0 */
   weight: number;
   addedAt: string;

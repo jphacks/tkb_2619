@@ -8,9 +8,10 @@ import { roomBackend } from "@/lib/room";
 import { useRoomIdentity } from "@/lib/room/identity";
 import { CATALOG } from "@/lib/music-source";
 import { applyArtistMeta, lookupArtistMeta } from "@/lib/music-source/musicbrainz";
-import { canonicalArtist } from "@/lib/music-source/normalize";
+import { canonicalArtist, normalizeKey } from "@/lib/music-source/normalize";
 import { recommendForRoom, type Recommendation } from "@/lib/logic/recommend";
 import { buildCandidatePool, rankWithVotes, voteDeck, type PoolItem, type RankedItem } from "@/lib/logic/ranking";
+import { requestGeminiPicks } from "@/lib/logic/gemini";
 import { Spinner } from "./ui";
 
 export interface RoomView {
@@ -111,6 +112,78 @@ function Message({ title, body, roomId }: { title: string; body: string; roomId?
   );
 }
 
+const GEMINI_DEBOUNCE_MS = 5_000;
+const geminiStorageKey = (roomId: string) => `musicconnect-gemini-${roomId}`;
+
+/**
+ * ホストの端末だけが Gemini に候補を選ばせ、ルームに保存して全員で共有する
+ * （各端末で別々に呼ぶと、人によって候補が変わってしまうため）。
+ * 持ち込まれた曲か条件が変わったときだけ呼ぶ。失敗してもカタログからのおすすめはそのまま使える。
+ */
+function useGeminiPicks(snapshot: RoomSnapshot | null, memberId: string | null, isHost: boolean) {
+  const latest = useRef(snapshot);
+  useEffect(() => {
+    latest.current = snapshot;
+  }, [snapshot]);
+  const running = useRef(false);
+
+  const enabled = Boolean(snapshot?.room.aiEnabled) && isHost && memberId !== null && roomBackend.kind === "supabase";
+  const signature = useMemo(() => {
+    if (!snapshot) return null;
+    const brought = snapshot.candidates.filter((c) => c.source !== "ai").map((c) => normalizeKey(c.song));
+    return JSON.stringify([snapshot.room.conditions, [...new Set(brought)].sort()]);
+  }, [snapshot]);
+
+  useEffect(() => {
+    const roomId = latest.current?.room.id;
+    if (!enabled || !signature || !roomId || !memberId) return;
+    if (readSession(geminiStorageKey(roomId)) === signature) return;
+
+    const timer = setTimeout(async () => {
+      const current = latest.current;
+      if (running.current || !current) return;
+      running.current = true;
+      try {
+        const picks = await requestGeminiPicks(current.room, current.candidates);
+        const existing = current.candidates.filter((c) => c.source === "ai").length;
+        await roomBackend.addCandidates(
+          picks.map((song, i) => ({
+            roomId,
+            memberId,
+            songId: song.id,
+            song,
+            source: "ai" as const,
+            // 先に選ばれた曲ほど上（0〜1）。後から追加された分は少し下げて並べる
+            weight: Math.max(0.3, 1 - (existing + i) * 0.02),
+          }))
+        );
+        writeSession(geminiStorageKey(roomId), signature);
+      } catch (error) {
+        console.warn("Geminiのおすすめを取得できませんでした（カタログのおすすめを使います）", error);
+      } finally {
+        running.current = false;
+      }
+    }, GEMINI_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [enabled, signature, memberId]);
+}
+
+function readSession(key: string): string | null {
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(key: string, value: string) {
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    // プライベートモード等では保存できないが、次に呼ぶだけ
+  }
+}
+
 export default function RoomProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const roomId = useSearchParams().get("room");
@@ -120,6 +193,8 @@ export default function RoomProvider({ children }: { children: React.ReactNode }
   const snapshot = state?.status === "ready" ? state.snapshot : null;
   const me = snapshot?.members.find((m) => m.id === identity?.memberId) ?? null;
   useMetadataEnrichment(snapshot, me?.id ?? null);
+  const isHost = Boolean(snapshot && me && (snapshot.room.hostMemberId === me.id || identity?.isHost));
+  useGeminiPicks(snapshot, me?.id ?? null, isHost);
 
   const notJoined = identity !== undefined && snapshot !== null && !me;
   useEffect(() => {
@@ -135,7 +210,7 @@ export default function RoomProvider({ children }: { children: React.ReactNode }
       roomId,
       snapshot,
       me,
-      isHost: snapshot.room.hostMemberId === me.id || Boolean(identity?.isHost),
+      isHost,
       aiRecommendations,
       pool,
       deck: voteDeck(pool),
@@ -143,7 +218,7 @@ export default function RoomProvider({ children }: { children: React.ReactNode }
       updatedAt: state.updatedAt,
       refresh,
     };
-  }, [snapshot, me, roomId, state, identity, refresh]);
+  }, [snapshot, me, roomId, state, isHost, refresh]);
 
   if (!roomId) return <Message title="ルームが指定されていません" body="招待URLをもう一度開いてください。" />;
   if (state?.status === "missing")

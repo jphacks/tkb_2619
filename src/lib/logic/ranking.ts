@@ -54,7 +54,13 @@ export function buildCandidatePool(snapshot: RoomSnapshot, aiRecommendations: Re
   const memberCount = Math.max(snapshot.members.length, 1);
   const byKey = new Map<string, PoolItem>();
 
+  // Geminiが選んだ曲（ホストが保存）は「誰かが持ち込んだ曲」ではなくAIのおすすめとして扱い、カタログからのおすすめより先に置く
+  const geminiPicks: Recommendation[] = snapshot.candidates
+    .filter((c) => c.source === "ai")
+    .map((c) => ({ song: c.song, score: c.weight, reason: c.song.aiReason ?? "AIのおすすめ" }));
+
   for (const c of snapshot.candidates) {
+    if (c.source === "ai") continue;
     const key = normalizeKey(c.song);
     const item = byKey.get(key) ?? {
       key,
@@ -79,11 +85,11 @@ export function buildCandidatePool(snapshot: RoomSnapshot, aiRecommendations: Re
     byKey.set(key, item);
   }
 
-  for (const rec of aiRecommendations) {
+  for (const rec of [...geminiPicks, ...aiRecommendations]) {
     const key = normalizeKey(rec.song);
     const item = byKey.get(key);
     if (item) {
-      item.ai = rec;
+      item.ai = item.ai ?? rec;
       continue;
     }
     byKey.set(key, {
