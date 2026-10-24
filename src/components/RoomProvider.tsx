@@ -104,7 +104,7 @@ function Message({ title, body, roomId }: { title: string; body: string; roomId?
     <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
       <p className="text-lg font-bold">{title}</p>
       <p className="text-sm leading-relaxed text-muted">{body}</p>
-      <Link href={roomId ? `/join?room=${roomId}` : "/"} className="mt-2 text-sm font-bold text-teal underline">
+      <Link href={roomId ? `/join?room=${roomId}` : "/"} className="mt-2 text-sm font-bold text-accent underline">
         {roomId ? "参加画面へ" : "トップへ戻る"}
       </Link>
     </div>

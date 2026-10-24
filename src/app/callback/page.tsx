@@ -56,7 +56,7 @@ function SpotifyCallback() {
     <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
       <p className="text-lg font-bold">連携できませんでした</p>
       <p className="text-sm leading-relaxed text-muted">{message}</p>
-      <Link href="/" className="mt-2 text-sm font-bold text-teal underline">
+      <Link href="/" className="mt-2 text-sm font-bold text-accent underline">
         トップへ戻る
       </Link>
     </div>

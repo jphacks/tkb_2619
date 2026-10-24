@@ -12,8 +12,8 @@ import { spotifyOpenUrl } from "@/lib/music-source/spotify";
 import { SWIPE_SCORES, type SwipeDirection, type VoteScore } from "@/types";
 
 const SCORE_BUTTONS: { score: VoteScore; label: string; className: string; direction: SwipeDirection }[] = [
-  { score: 0, label: "今は違う", className: "bg-no-soft text-no", direction: "left" },
-  { score: 1, label: "うーん", className: "bg-meh-soft text-meh", direction: "down" },
+  { score: 0, label: "Nope", className: "bg-no-soft text-no", direction: "left" },
+  { score: 1, label: "Meh", className: "bg-meh-soft text-meh", direction: "down" },
   { score: 2, label: "Better", className: "bg-better-soft text-better", direction: "right" },
   { score: 3, label: "Best", className: "bg-best-soft text-best", direction: "up" },
 ];
@@ -113,7 +113,7 @@ export default function VotePage() {
             <Link href={`/room/results?room=${roomId}`} className={`${primaryButton} max-w-xs`}>
               結果を見る
             </Link>
-            <button type="button" onClick={undo} className="flex items-center gap-1.5 text-[13px] font-bold text-teal">
+            <button type="button" onClick={undo} className="flex items-center gap-1.5 text-[13px] font-bold text-accent">
               <Undo2 size={16} />
               ひとつ戻す
             </button>
@@ -126,7 +126,7 @@ export default function VotePage() {
               </span>
               <span className="h-2 flex-1 overflow-hidden rounded-full bg-line">
                 <span
-                  className="block h-full rounded-full bg-teal transition-all"
+                  className="block h-full rounded-full bg-accent transition-all"
                   style={{ width: `${((doneCount + 1) / deck.length) * 100}%` }}
                 />
               </span>
@@ -138,8 +138,8 @@ export default function VotePage() {
             <div className="mt-2 grid grid-cols-[64px_1fr_64px] items-center gap-1">
               <DirectionLabel direction="left" />
               <div className="relative">
-                <div className="absolute inset-0 -rotate-3 scale-[0.96] rounded-[22px] bg-white/70 shadow-sm" />
-                <div className="absolute inset-0 rotate-2 scale-[0.98] rounded-[22px] bg-white/80 shadow-sm" />
+                <div className="absolute inset-0 -rotate-3 scale-[0.96] rounded-[22px] bg-surface/70 shadow-sm" />
+                <div className="absolute inset-0 rotate-2 scale-[0.98] rounded-[22px] bg-surface/80 shadow-sm" />
                 <VoteCard
                   key={current.key}
                   song={current.song}
@@ -182,7 +182,7 @@ export default function VotePage() {
                 type="button"
                 onClick={undo}
                 disabled={doneCount === 0}
-                className={`${outlineButton} whitespace-nowrap px-3 py-3 text-[14px] text-teal`}
+                className={`${outlineButton} whitespace-nowrap px-3 py-3 text-[14px] text-accent`}
               >
                 <Undo2 size={18} />
                 ひとつ戻す

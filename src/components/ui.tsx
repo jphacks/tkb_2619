@@ -12,7 +12,7 @@ export function AppHeader({ title, backHref }: { title: string; backHref?: strin
         type="button"
         aria-label="戻る"
         onClick={() => (backHref ? router.push(backHref) : router.back())}
-        className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-black/5"
+        className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-ink/10"
       >
         <ChevronLeft size={24} />
       </button>
@@ -32,7 +32,7 @@ const TABS: { id: RoomTab; label: string; path: string; Icon: typeof Music }[] =
 
 export function TabBar({ roomId, active }: { roomId: string; active?: RoomTab }) {
   return (
-    <nav className="sticky bottom-0 z-20 mt-auto grid grid-cols-3 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <nav className="sticky bottom-0 z-20 mt-auto grid grid-cols-3 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       {TABS.map(({ id, label, path, Icon }) => {
         const on = id === active;
         return (
@@ -40,12 +40,12 @@ export function TabBar({ roomId, active }: { roomId: string; active?: RoomTab })
             key={id}
             href={`${path}?room=${roomId}`}
             className={`relative flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium ${
-              on ? "text-teal" : "text-muted"
+              on ? "text-accent" : "text-muted"
             }`}
           >
             <Icon size={22} strokeWidth={on ? 2.4 : 1.8} />
             {label}
-            {on && <span className="absolute bottom-0 h-[3px] w-12 rounded-full bg-teal" />}
+            {on && <span className="absolute bottom-0 h-[3px] w-12 rounded-full bg-accent" />}
           </Link>
         );
       })}
@@ -59,7 +59,7 @@ export function SpotifyLogo({ size = 22 }: { size?: number }) {
       <circle cx="12" cy="12" r="12" fill="currentColor" />
       <path
         d="M6.5 9.4c3.7-1.1 7.9-.8 11.2 1M7.1 12.5c3-.8 6.4-.5 9.1 1M7.7 15.4c2.4-.6 4.9-.4 7 .8"
-        stroke="var(--color-teal)"
+        stroke="var(--color-accent)"
         strokeWidth="1.6"
         strokeLinecap="round"
         fill="none"
@@ -69,15 +69,15 @@ export function SpotifyLogo({ size = 22 }: { size?: number }) {
 }
 
 export const primaryButton =
-  "flex w-full items-center justify-center gap-2 rounded-2xl bg-teal px-5 py-4 text-[16px] font-bold text-white shadow-sm transition hover:bg-teal-dark active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50";
+  "flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-5 py-4 text-[16px] font-bold text-on-accent shadow-sm transition hover:bg-accent-dark active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50";
 
 export const outlineButton =
-  "flex w-full items-center justify-center gap-2 rounded-2xl border-[1.5px] border-teal/70 bg-white px-5 py-3.5 text-[15px] font-bold text-ink transition hover:bg-teal-soft active:scale-[0.99] disabled:opacity-50";
+  "flex w-full items-center justify-center gap-2 rounded-2xl border-[1.5px] border-accent/70 bg-surface px-5 py-3.5 text-[15px] font-bold text-ink transition hover:bg-accent-soft active:scale-[0.99] disabled:opacity-50";
 
 export function Spinner({ label }: { label?: string }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 py-20 text-sm text-muted">
-      <span className="h-8 w-8 animate-spin rounded-full border-[3px] border-teal/20 border-t-teal" />
+      <span className="h-8 w-8 animate-spin rounded-full border-[3px] border-accent/20 border-t-accent" />
       {label}
     </div>
   );

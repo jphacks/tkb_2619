@@ -63,11 +63,11 @@ export default function ResultsPage() {
     <>
       <AppHeader title="投票結果" backHref={`/room?room=${roomId}`} />
       <main className="flex flex-1 flex-col gap-3 px-4 pb-6">
-        <div className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-          <span className="flex items-center gap-2 rounded-full bg-teal-soft px-3 py-1.5 text-[13px] font-bold text-teal">
+        <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+          <span className="flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1.5 text-[13px] font-bold text-accent">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute h-full w-full animate-ping rounded-full bg-teal/60" />
-              <span className="relative h-2.5 w-2.5 rounded-full bg-teal" />
+              <span className="absolute h-full w-full animate-ping rounded-full bg-accent/60" />
+              <span className="relative h-2.5 w-2.5 rounded-full bg-accent" />
             </span>
             リアルタイム更新
           </span>
@@ -93,7 +93,7 @@ export default function ResultsPage() {
               return (
                 <li
                   key={item.key}
-                  className={`rounded-2xl border transition ${top ? "border-teal/15 bg-teal-soft/70" : "border-line bg-white"}`}
+                  className={`rounded-2xl border transition ${top ? "border-accent/15 bg-accent-soft/70" : "border-line bg-surface"}`}
                 >
                   <button
                     type="button"
@@ -102,7 +102,7 @@ export default function ResultsPage() {
                   >
                     <span
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[15px] font-bold ${
-                        top ? "bg-teal text-white" : "bg-no-soft text-ink"
+                        top ? "bg-accent text-on-accent" : "bg-no-soft text-ink"
                       }`}
                     >
                       {i + 1}
@@ -118,7 +118,7 @@ export default function ResultsPage() {
                         {Math.abs(delta)}
                       </span>
                     )}
-                    <span className={`w-[64px] shrink-0 text-right font-bold ${top ? "text-teal" : ""}`}>
+                    <span className={`w-[64px] shrink-0 text-right font-bold ${top ? "text-accent" : ""}`}>
                       <span className="text-[22px]">{item.pt}</span>
                       <span className="text-[12px]">pt</span>
                     </span>
@@ -133,7 +133,7 @@ export default function ResultsPage() {
                         href={spotifyOpenUrl(item.song)}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1 rounded-lg border border-line bg-white px-2.5 py-1.5 font-bold"
+                        className="flex items-center gap-1 rounded-lg border border-line bg-surface px-2.5 py-1.5 font-bold"
                       >
                         <ExternalLink size={13} />
                         Spotify
@@ -142,7 +142,7 @@ export default function ResultsPage() {
                         <button
                           type="button"
                           onClick={() => roomBackend.setFinalSong(roomId, isFinal ? null : item.song.id)}
-                          className="flex items-center gap-1 rounded-lg bg-teal px-2.5 py-1.5 font-bold text-white"
+                          className="flex items-center gap-1 rounded-lg bg-accent px-2.5 py-1.5 font-bold text-on-accent"
                         >
                           {isFinal ? <Check size={13} /> : <Play size={13} fill="currentColor" />}
                           {isFinal ? "選択中（解除）" : "この曲を流す"}

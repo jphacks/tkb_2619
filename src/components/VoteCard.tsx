@@ -57,7 +57,7 @@ export default function VoteCard({
 
   return (
     <motion.div
-      className="relative z-10 w-full cursor-grab touch-none rounded-[22px] bg-white p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.10)] active:cursor-grabbing"
+      className="relative z-10 w-full cursor-grab touch-none rounded-[22px] bg-surface p-3.5 shadow-[0_8px_24px_rgba(0,0,0,0.10)] active:cursor-grabbing"
       style={{ x, y, rotate }}
       drag={!active}
       dragElastic={0.8}
@@ -74,7 +74,7 @@ export default function VoteCard({
           aria-label="試聴"
           onPointerDownCapture={(e) => e.stopPropagation()}
           onClick={onPlay}
-          className="absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-md"
+          className="absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-surface/90 text-ink shadow-md"
         >
           <Play size={24} fill="currentColor" className="ml-1" />
         </button>
@@ -82,7 +82,7 @@ export default function VoteCard({
           <motion.span
             key={dir}
             style={{ opacity: badgeOpacity[dir] }}
-            className={`pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 rounded-lg border-[3px] bg-white/90 px-3 py-1 text-[18px] font-black ${BADGE_STYLE[dir]}`}
+            className={`pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 rounded-lg border-[3px] bg-surface/90 px-3 py-1 text-[18px] font-black ${BADGE_STYLE[dir]}`}
           >
             {SWIPE_SCORES[dir].label}
           </motion.span>

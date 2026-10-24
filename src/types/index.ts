@@ -134,7 +134,7 @@ export interface CandidateEntry {
   addedAt: string;
 }
 
-/** 0: 今は違う / 1: うーん / 2: Better / 3: Best / null: 知らない・スキップ */
+/** 0: Nope / 1: Meh / 2: Better / 3: Best / null: 知らない・スキップ */
 export type VoteScore = 0 | 1 | 2 | 3;
 
 export interface VoteEntry {
@@ -158,13 +158,13 @@ export type SwipeDirection = "up" | "right" | "down" | "left";
 export const SWIPE_SCORES: Record<SwipeDirection, { score: VoteScore; label: string }> = {
   up: { score: 3, label: "Best" },
   right: { score: 2, label: "Better" },
-  down: { score: 1, label: "うーん" },
-  left: { score: 0, label: "今は違う" },
+  down: { score: 1, label: "Meh" },
+  left: { score: 0, label: "Nope" },
 };
 
 export const SCORE_LABELS: Record<VoteScore, string> = {
-  0: "今は違う",
-  1: "うーん",
+  0: "Nope",
+  1: "Meh",
   2: "Better",
   3: "Best",
 };
