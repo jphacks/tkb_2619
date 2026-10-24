@@ -157,10 +157,11 @@ function useGeminiPicks(snapshot: RoomSnapshot | null, memberId: string | null, 
             weight: Math.max(0.3, 1 - (existing + i) * 0.02),
           }))
         );
-        writeSession(geminiStorageKey(roomId), signature);
       } catch (error) {
         console.warn("Geminiのおすすめを取得できませんでした（カタログのおすすめを使います）", error);
       } finally {
+        // 失敗しても同じ内容では呼び直さない（Geminiの利用枠を使い切らないため）。曲か条件が変われば再度呼ぶ
+        writeSession(geminiStorageKey(roomId), signature);
         running.current = false;
       }
     }, GEMINI_DEBOUNCE_MS);
