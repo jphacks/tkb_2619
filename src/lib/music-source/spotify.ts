@@ -1,5 +1,5 @@
 import type { Song } from "@/types";
-import { colorsForId, generationsForYear, normalizeKey, parseYear } from "./normalize";
+import { canonicalArtist, colorsForId, generationsForYear, normalizeKey, parseYear } from "./normalize";
 
 /**
  * Spotify Web API 連携（参加者の「知ってる曲」の取り込み）。
@@ -16,7 +16,7 @@ import { colorsForId, generationsForYear, normalizeKey, parseYear } from "./norm
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || "135ab4d9cb254a939e6b4909e641e0ca";
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const SCOPES = ["user-top-read", "user-library-read"];
+const SCOPES = ["user-top-read"];
 const PKCE_STORAGE_KEY = "music-bridge-spotify-pkce";
 
 export class SpotifyError extends Error {}
@@ -39,8 +39,15 @@ async function codeChallengeFor(verifier: string): Promise<string> {
     .replace(/=+$/, "");
 }
 
+/** ログイン後にどのルームへ戻るか */
+export interface SpotifyLoginContext {
+  roomId: string;
+}
+
 /** Spotifyのログイン画面へ遷移する。localhostで開いている場合は 127.0.0.1 に移動するだけで終わる */
-export async function startSpotifyLogin(): Promise<"redirected-to-loopback" | "redirected-to-spotify"> {
+export async function startSpotifyLogin(
+  context: SpotifyLoginContext
+): Promise<"redirected-to-loopback" | "redirected-to-spotify"> {
   if (window.location.hostname === "localhost") {
     window.location.href = window.location.href.replace("//localhost", "//127.0.0.1");
     return "redirected-to-loopback";
@@ -48,7 +55,7 @@ export async function startSpotifyLogin(): Promise<"redirected-to-loopback" | "r
 
   const verifier = randomString(64);
   const state = randomString(16);
-  sessionStorage.setItem(PKCE_STORAGE_KEY, JSON.stringify({ verifier, state }));
+  sessionStorage.setItem(PKCE_STORAGE_KEY, JSON.stringify({ verifier, state, context }));
 
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
@@ -66,11 +73,16 @@ export async function startSpotifyLogin(): Promise<"redirected-to-loopback" | "r
 }
 
 /** /callback で受け取った認可コードをアクセストークンに交換する */
-export async function exchangeCodeForToken(code: string, state: string | null): Promise<string> {
+export async function exchangeCodeForToken(
+  code: string,
+  state: string | null
+): Promise<{ token: string; context: SpotifyLoginContext }> {
   const saved = sessionStorage.getItem(PKCE_STORAGE_KEY);
   sessionStorage.removeItem(PKCE_STORAGE_KEY);
-  const { verifier, state: expectedState } = saved ? JSON.parse(saved) : ({} as Record<string, string>);
-  if (!verifier || state !== expectedState) {
+  const { verifier, state: expectedState, context } = saved
+    ? (JSON.parse(saved) as { verifier?: string; state?: string; context?: SpotifyLoginContext })
+    : {};
+  if (!verifier || !context || state !== expectedState) {
     throw new SpotifyError("ログイン情報の確認に失敗しました。もう一度「Spotifyで参加」からやり直してください。");
   }
 
@@ -87,14 +99,14 @@ export async function exchangeCodeForToken(code: string, state: string | null): 
   });
   if (!res.ok) throw new SpotifyError(`Spotifyのトークン取得に失敗しました（${res.status}）`);
   const data = (await res.json()) as { access_token: string };
-  return data.access_token;
+  return { token: data.access_token, context };
 }
 
 interface SpotifyTrack {
   id: string;
   name: string;
   artists: { name: string }[];
-  album: { release_date?: string };
+  album: { release_date?: string; images?: { url: string; width: number }[] };
 }
 
 async function spotifyGet<T>(path: string, token: string): Promise<T> {
@@ -115,45 +127,61 @@ async function spotifyGet<T>(path: string, token: string): Promise<T> {
 function trackToSong(track: SpotifyTrack): Song {
   const id = `spotify:${track.id}`;
   const year = parseYear(track.album.release_date);
+  const images = [...(track.album.images ?? [])].sort((a, b) => a.width - b.width);
   return {
     id,
     title: track.name,
-    artist: track.artists[0]?.name ?? "不明なアーティスト",
+    artist: canonicalArtist(track.artists[0]?.name ?? "不明なアーティスト"),
     genre: "other",
     year,
     generationTags: generationsForYear(year),
     nationalityTags: [],
     ...colorsForId(id),
     origin: "spotify",
+    spotifyId: track.id,
+    artworkUrl: (images.find((i) => i.width >= 200) ?? images[images.length - 1])?.url,
     metaStatus: "pending",
   };
 }
 
-export interface SpotifyImport {
-  spotifyUserId: string;
-  displayName: string;
-  songs: Song[];
+export interface ListenedSong {
+  song: Song;
+  /** よく聴いた順位から求めた重み（1位=1.0 → 50位=0.02） */
+  weight: number;
 }
 
-/** よく聴く曲（トップトラック）とお気に入り曲を取り込み、重複を除いて返す */
-export async function importSpotifyLibrary(token: string): Promise<SpotifyImport> {
-  const me = await spotifyGet<{ id: string; display_name: string | null }>("/me", token);
-  const [top, saved] = await Promise.all([
-    spotifyGet<{ items: SpotifyTrack[] }>("/me/top/tracks?limit=50&time_range=medium_term", token),
-    spotifyGet<{ items: { track: SpotifyTrack }[] }>("/me/tracks?limit=50", token),
-  ]);
+export interface SpotifyImport {
+  displayName: string;
+  songs: ListenedSong[];
+}
 
-  const byKey = new Map<string, Song>();
-  for (const track of [...top.items, ...saved.items.map((i) => i.track)]) {
-    if (!track?.id) continue;
+const TOP_LIMIT = 50;
+
+/**
+ * 過去1ヶ月によく聴いた曲（Spotifyの short_term ≒ 直近4週間のトップトラック）を取り込む。
+ * 議事録では「聴いた回数」でランキング化する案だが、Spotify APIは再生回数を返さないため、
+ * 順位から求めた重みで代用している。
+ */
+export async function importSpotifyLibrary(token: string): Promise<SpotifyImport> {
+  const me = await spotifyGet<{ display_name: string | null }>("/me", token);
+  const top = await spotifyGet<{ items: SpotifyTrack[] }>(
+    `/me/top/tracks?limit=${TOP_LIMIT}&time_range=short_term`,
+    token
+  );
+
+  const byKey = new Map<string, ListenedSong>();
+  top.items.forEach((track, rank) => {
+    if (!track?.id) return;
     const song = trackToSong(track);
     const key = normalizeKey(song);
-    if (!byKey.has(key)) byKey.set(key, song);
-  }
+    if (!byKey.has(key)) byKey.set(key, { song, weight: (TOP_LIMIT - rank) / TOP_LIMIT });
+  });
 
-  return {
-    spotifyUserId: me.id,
-    displayName: me.display_name || "Spotifyユーザー",
-    songs: Array.from(byKey.values()),
-  };
+  return { displayName: me.display_name || "Spotifyユーザー", songs: Array.from(byKey.values()) };
+}
+
+/** Spotifyで曲を開くURL（IDがなければ検索ページ） */
+export function spotifyOpenUrl(song: Pick<Song, "title" | "artist" | "spotifyId">): string {
+  if (song.spotifyId) return `https://open.spotify.com/track/${song.spotifyId}`;
+  return `https://open.spotify.com/search/${encodeURIComponent(`${song.title} ${song.artist}`)}`;
 }

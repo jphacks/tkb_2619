@@ -1,44 +1,146 @@
-import type { CandidateSong, Vote } from "@/types";
-import { summarizeVotes } from "./voting";
-
-export interface RankedSong extends CandidateSong {
-  voteCount: number;
-  averageVoteScore: number; // 0〜3
-  finalScore: number; // 0〜1
-}
+import type { RoomSnapshot, Song, VoteEntry } from "@/types";
+import { normalizeKey } from "@/lib/music-source";
+import type { Recommendation } from "./recommend";
 
 /**
- * ランキングアルゴリズム（簡易版）:
- * 「候補ランキング（共通曲の被り度合い or 属性マッチ度）」と「スワイプ投票スコア」の
- * 加重平均で最終順位を決める。重みは仮決定（TODO: デモ後にチューニング余地あり）。
+ * 議事録の流れ: 曲の候補出し（投稿 / Spotifyデータ / AI）→ 候補ランキング → スワイプ投票 → 最終ランキング。
+ * 重みは仮決定（TODO: デモでの体感を見て調整）。
  */
-const COVERAGE_WEIGHT = 0.5;
-const VOTE_WEIGHT = 0.5;
+export const RANKING_WEIGHTS = {
+  /** 何人が持ち込んだか（被りの人数） */
+  coverage: 0.6,
+  /** Spotifyで過去1ヶ月によく聴いた度合いの合計（議事録「聴いた回数の和」の代用） */
+  listening: 0.4,
+  /** AIレコメンドだけから来た曲 */
+  aiOnly: 0.3,
+  /** 持ち込まれた曲がAIの条件にも合う場合の加点 */
+  aiBonus: 0.1,
+  /** パーティー: 定番曲ばかりにならないよう、人気が高すぎない曲を少し加点（議事録「曲のニッチ度合い」） */
+  nicheBonus: 0.1,
+  /** 最終ランキング = 候補ランキング 40% + スワイプ平均 60% */
+  finalPre: 0.4,
+  finalVote: 0.6,
+};
 
-export function computeFinalRanking(candidates: CandidateSong[], votes: Vote[]): RankedSong[] {
-  const voteSummaries = summarizeVotes(votes);
+/** スワイプ投票に回す曲数（議事録「投稿までのランキング上位からスワイプ」） */
+export const VOTE_DECK_SIZE = 10;
 
-  const ranked = candidates.map<RankedSong>((candidate) => {
-    const summary = voteSummaries.get(candidate.song.id);
-    const voteCount = summary?.voteCount ?? 0;
-    const averageVoteScore = summary?.averageScore ?? 0;
-    const normalizedVoteScore = summary?.normalizedScore ?? 0;
+export interface PoolItem {
+  key: string;
+  song: Song;
+  /** 同じ曲として扱う曲ID（Spotify/MusicBrainz/カタログで別IDになる） */
+  songIds: string[];
+  memberIds: string[];
+  listening: number;
+  fromSpotify: boolean;
+  fromManual: boolean;
+  ai: Recommendation | null;
+  preScore: number;
+}
 
-    // 共通曲は knownByRatio、属性レコメンドのみの曲は recommendScore をベース指標とする
-    const baseScore = candidate.source === "common" ? candidate.knownByRatio : candidate.recommendScore;
+export interface RankedItem extends PoolItem {
+  voteCount: number;
+  voteAverage: number | null;
+  pt: number;
+}
 
-    const finalScore =
-      voteCount > 0
-        ? COVERAGE_WEIGHT * baseScore + VOTE_WEIGHT * normalizedVoteScore
-        : baseScore;
+/** ジャケット・SpotifyIDなど情報の多い方の曲データを代表にする */
+function richer(a: Song, b: Song): Song {
+  const score = (s: Song) => (s.spotifyId ? 2 : 0) + (s.artworkUrl ? 1 : 0) + (s.metaStatus === "done" ? 1 : 0);
+  return score(b) > score(a) ? b : a;
+}
 
-    return {
-      ...candidate,
-      voteCount,
-      averageVoteScore,
-      finalScore,
+export function buildCandidatePool(snapshot: RoomSnapshot, aiRecommendations: Recommendation[]): PoolItem[] {
+  const memberCount = Math.max(snapshot.members.length, 1);
+  const byKey = new Map<string, PoolItem>();
+
+  for (const c of snapshot.candidates) {
+    const key = normalizeKey(c.song);
+    const item = byKey.get(key) ?? {
+      key,
+      song: c.song,
+      songIds: [],
+      memberIds: [],
+      listening: 0,
+      fromSpotify: false,
+      fromManual: false,
+      ai: null,
+      preScore: 0,
     };
-  });
+    item.song = richer(item.song, c.song);
+    if (!item.songIds.includes(c.songId)) item.songIds.push(c.songId);
+    if (!item.memberIds.includes(c.memberId)) item.memberIds.push(c.memberId);
+    if (c.source === "spotify") {
+      item.fromSpotify = true;
+      item.listening += c.weight;
+    } else {
+      item.fromManual = true;
+    }
+    byKey.set(key, item);
+  }
 
-  return ranked.sort((a, b) => b.finalScore - a.finalScore);
+  for (const rec of aiRecommendations) {
+    const key = normalizeKey(rec.song);
+    const item = byKey.get(key);
+    if (item) {
+      item.ai = rec;
+      continue;
+    }
+    byKey.set(key, {
+      key,
+      song: rec.song,
+      songIds: [rec.song.id],
+      memberIds: [],
+      listening: 0,
+      fromSpotify: false,
+      fromManual: false,
+      ai: rec,
+      preScore: 0,
+    });
+  }
+
+  const W = RANKING_WEIGHTS;
+  const items = [...byKey.values()];
+  for (const item of items) {
+    const brought = item.memberIds.length > 0;
+    let score = brought
+      ? W.coverage * (item.memberIds.length / memberCount) + W.listening * Math.min(1, item.listening / memberCount)
+      : W.aiOnly * (item.ai?.score ?? 0);
+    if (brought && item.ai) score += W.aiBonus * item.ai.score;
+    if (snapshot.room.scene === "party" && item.song.popularity !== undefined) {
+      score += W.nicheBonus * (1 - item.song.popularity / 100);
+    }
+    item.preScore = score;
+  }
+
+  return items.sort((a, b) => b.preScore - a.preScore || b.memberIds.length - a.memberIds.length);
+}
+
+export function voteDeck(pool: PoolItem[]): PoolItem[] {
+  return pool.slice(0, VOTE_DECK_SIZE);
+}
+
+/** 投票は代表曲のIDに付くが、同じ曲の別IDへの投票もまとめて数える */
+function votesFor(item: PoolItem, votes: VoteEntry[]): VoteEntry[] {
+  return votes.filter((v) => item.songIds.includes(v.songId) || v.songId === item.song.id);
+}
+
+/** その人がこの曲をすでに評価（スキップ含む）したか */
+export function myVoteFor(item: PoolItem, votes: VoteEntry[], memberId: string): VoteEntry | undefined {
+  return votesFor(item, votes).find((v) => v.memberId === memberId);
+}
+
+/** 最終ランキング（議事録「投稿までのランキング出力＋スワイプスコア」） */
+export function rankWithVotes(pool: PoolItem[], votes: VoteEntry[]): RankedItem[] {
+  const maxPre = Math.max(...pool.map((p) => p.preScore), 0.0001);
+  const W = RANKING_WEIGHTS;
+  return pool
+    .map((item) => {
+      const scored = votesFor(item, votes).filter((v) => v.score !== null);
+      const voteAverage = scored.length > 0 ? scored.reduce((sum, v) => sum + (v.score ?? 0), 0) / scored.length : null;
+      const pre = item.preScore / maxPre;
+      const pt = voteAverage === null ? W.finalPre * pre : W.finalPre * pre + W.finalVote * (voteAverage / 3);
+      return { ...item, voteCount: scored.length, voteAverage, pt: Math.round(pt * 100) };
+    })
+    .sort((a, b) => b.pt - a.pt || b.preScore - a.preScore);
 }

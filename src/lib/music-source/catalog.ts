@@ -1,0 +1,140 @@
+import type { GenderPref, Genre, Mood, Nationality, Song } from "@/types";
+import { colorsForId, generationsForYear } from "./normalize";
+
+/**
+ * AIレコメンドの母集団となるキュレーション済みカタログ。
+ * MusicBrainzには人気度の指標がなく、条件だけで選ぶと誰も知らない曲ばかりになるため、
+ * 「よく知られた曲」をここで用意している。
+ * popularity（0〜100）と nationalityTags（その国でよく聴かれる）は目安としての手入力値。
+ * TODO: 国別・世代別チャートなどの実データに置き換える（議事録「世代の人気ランキング」「国のチャート」）。
+ */
+type Entry = [
+  title: string,
+  artist: string,
+  genre: Genre,
+  year: number,
+  nationalityTags: Nationality[],
+  popularity: number,
+  moods: Mood[],
+  vocal?: GenderPref,
+];
+
+const ENTRIES: Entry[] = [
+  ["怪獣の花唄", "Vaundy", "rock", 2020, ["JP"], 88, ["upbeat", "singalong"], "male"],
+  ["チェリー", "スピッツ", "rock", 1996, ["JP"], 85, ["nostalgic", "singalong", "romantic"], "male"],
+  ["空も飛べるはず", "スピッツ", "rock", 1994, ["JP"], 75, ["nostalgic", "emotional"], "male"],
+  ["新宝島", "サカナクション", "rock", 2015, ["JP"], 82, ["upbeat"], "male"],
+  ["Pretender", "Official髭男dism", "jpop", 2019, ["JP"], 90, ["emotional", "romantic"], "male"],
+  ["Subtitle", "Official髭男dism", "jpop", 2022, ["JP"], 80, ["emotional", "romantic"], "male"],
+  ["夜に駆ける", "YOASOBI", "jpop", 2019, ["JP", "OTHER"], 92, ["upbeat"], "female"],
+  ["群青", "YOASOBI", "jpop", 2020, ["JP"], 80, ["upbeat", "emotional"], "female"],
+  ["アイドル", "YOASOBI", "anime", 2023, ["JP", "OTHER"], 95, ["upbeat"], "female"],
+  ["怪物", "YOASOBI", "anime", 2021, ["JP"], 78, ["upbeat"], "female"],
+  ["青と夏", "Mrs. GREEN APPLE", "rock", 2018, ["JP"], 85, ["upbeat", "summer", "singalong"], "male"],
+  ["ケセラセラ", "Mrs. GREEN APPLE", "jpop", 2023, ["JP"], 83, ["upbeat", "emotional"], "male"],
+  ["小さな恋のうた", "MONGOL800", "rock", 2001, ["JP"], 84, ["singalong", "romantic", "nostalgic"], "male"],
+  ["マリーゴールド", "あいみょん", "jpop", 2018, ["JP"], 87, ["romantic", "summer"], "female"],
+  ["天体観測", "BUMP OF CHICKEN", "rock", 2001, ["JP"], 82, ["nostalgic", "emotional"], "male"],
+  ["ただ君に晴れ", "ヨルシカ", "rock", 2017, ["JP"], 70, ["summer", "emotional"], "female"],
+  ["花に亡霊", "ヨルシカ", "jpop", 2020, ["JP"], 68, ["summer", "chill", "emotional"], "female"],
+  ["春泥棒", "ヨルシカ", "jpop", 2021, ["JP"], 72, ["emotional"], "female"],
+  ["新時代", "Ado", "anime", 2022, ["JP", "OTHER"], 88, ["upbeat"], "female"],
+  ["唱", "Ado", "jpop", 2023, ["JP"], 80, ["upbeat"], "female"],
+  ["Lemon", "米津玄師", "jpop", 2018, ["JP", "CN"], 93, ["emotional"], "male"],
+  ["KICK BACK", "米津玄師", "anime", 2022, ["JP", "OTHER"], 80, ["upbeat"], "male"],
+  ["白日", "King Gnu", "rock", 2019, ["JP"], 80, ["emotional"], "male"],
+  ["紅蓮華", "LiSA", "anime", 2019, ["JP", "OTHER"], 86, ["upbeat", "singalong"], "female"],
+  ["恋", "星野源", "jpop", 2016, ["JP"], 84, ["upbeat", "singalong", "romantic"], "male"],
+  ["U.S.A.", "DA PUMP", "jpop", 2018, ["JP"], 80, ["upbeat", "singalong"], "male"],
+  ["TSUNAMI", "サザンオールスターズ", "jpop", 2000, ["JP"], 80, ["romantic", "summer", "nostalgic"], "male"],
+  ["真夏の果実", "サザンオールスターズ", "jpop", 1990, ["JP"], 72, ["romantic", "summer", "chill"], "male"],
+  ["粉雪", "レミオロメン", "rock", 2005, ["JP"], 76, ["emotional", "singalong"], "male"],
+  ["糸", "中島みゆき", "jpop", 1998, ["JP"], 78, ["emotional", "romantic"], "female"],
+  ["First Love", "宇多田ヒカル", "jpop", 1999, ["JP", "OTHER"], 85, ["romantic", "emotional", "chill"], "female"],
+  ["残酷な天使のテーゼ", "高橋洋子", "anime", 1995, ["JP", "OTHER"], 88, ["upbeat", "singalong", "nostalgic"], "female"],
+  ["川の流れのように", "美空ひばり", "enka", 1989, ["JP"], 75, ["emotional", "nostalgic"], "female"],
+  ["天城越え", "石川さゆり", "enka", 1986, ["JP"], 70, ["emotional", "nostalgic"], "female"],
+  ["プラスティック・ラブ", "竹内まりや", "citypop", 1984, ["JP", "OTHER"], 74, ["chill", "nostalgic", "romantic"], "female"],
+  ["真夜中のドア〜stay with me", "松原みき", "citypop", 1979, ["JP", "OTHER"], 70, ["chill", "nostalgic", "romantic"], "female"],
+  ["RIDE ON TIME", "山下達郎", "citypop", 1980, ["JP"], 68, ["upbeat", "summer", "nostalgic"], "male"],
+  ["Habit", "SEKAI NO OWARI", "jpop", 2022, ["JP"], 78, ["upbeat"], "male"],
+  ["Dynamite", "BTS", "kpop", 2020, ["KR", "US", "JP", "OTHER"], 92, ["upbeat", "singalong"], "male"],
+  ["Butter", "BTS", "kpop", 2021, ["KR", "US", "OTHER"], 85, ["upbeat"], "male"],
+  ["How You Like That", "BLACKPINK", "kpop", 2020, ["KR", "OTHER"], 84, ["upbeat"], "female"],
+  ["Hype Boy", "NewJeans", "kpop", 2022, ["KR", "JP"], 82, ["upbeat", "chill"], "female"],
+  ["TT", "TWICE", "kpop", 2016, ["KR", "JP"], 80, ["upbeat", "singalong"], "female"],
+  ["Antifragile", "LE SSERAFIM", "kpop", 2022, ["KR", "JP"], 72, ["upbeat"], "female"],
+  ["Gangnam Style", "PSY", "kpop", 2012, ["KR", "US", "CN", "JP", "OTHER"], 90, ["upbeat", "singalong"], "male"],
+  ["Shape of You", "Ed Sheeran", "pop", 2017, ["US", "OTHER"], 92, ["upbeat", "romantic"], "male"],
+  ["Blinding Lights", "The Weeknd", "pop", 2019, ["US", "OTHER"], 93, ["upbeat"], "male"],
+  ["Levitating", "Dua Lipa", "pop", 2020, ["US", "OTHER"], 85, ["upbeat", "summer"], "female"],
+  ["Uptown Funk", "Mark Ronson", "pop", 2014, ["US", "OTHER"], 88, ["upbeat", "singalong"], "male"],
+  ["Happy", "Pharrell Williams", "pop", 2013, ["US", "OTHER", "JP"], 85, ["upbeat", "singalong"], "male"],
+  ["bad guy", "Billie Eilish", "pop", 2019, ["US", "OTHER"], 86, ["chill"], "female"],
+  ["Bohemian Rhapsody", "Queen", "rock", 1975, ["OTHER", "US", "JP"], 90, ["singalong", "nostalgic"], "male"],
+  ["Billie Jean", "Michael Jackson", "pop", 1982, ["US", "OTHER", "JP"], 88, ["upbeat", "nostalgic"], "male"],
+  ["Sweet Child O' Mine", "Guns N' Roses", "rock", 1987, ["US"], 80, ["nostalgic"], "male"],
+  ["Wake Me Up", "Avicii", "edm", 2013, ["OTHER", "US"], 84, ["upbeat", "summer"], "male"],
+  ["Titanium", "David Guetta", "edm", 2011, ["OTHER", "US"], 78, ["upbeat", "emotional"], "female"],
+  ["Lose Yourself", "Eminem", "hiphop", 2002, ["US", "OTHER"], 86, ["upbeat"], "male"],
+  ["Old Town Road", "Lil Nas X", "hiphop", 2019, ["US"], 80, ["upbeat", "singalong"], "male"],
+  ["Despacito", "Luis Fonsi", "pop", 2017, ["OTHER", "US"], 88, ["upbeat", "summer", "romantic"], "male"],
+  ["Take Five", "The Dave Brubeck Quartet", "jazz", 1959, ["US", "OTHER", "JP"], 60, ["chill", "nostalgic"]],
+  ["Fly Me to the Moon", "Frank Sinatra", "jazz", 1964, ["US", "OTHER", "JP"], 75, ["romantic", "chill", "nostalgic"], "male"],
+  ["告白气球", "周杰伦", "pop", 2016, ["CN"], 85, ["romantic", "upbeat"], "male"],
+  ["晴天", "周杰伦", "pop", 2003, ["CN"], 82, ["nostalgic", "emotional"], "male"],
+  ["孤勇者", "陈奕迅", "pop", 2021, ["CN"], 84, ["upbeat", "singalong"], "male"],
+  ["カノン", "パッヘルベル", "classical", 1680, ["JP", "US", "KR", "CN", "OTHER"], 70, ["chill", "romantic"]],
+];
+
+export const CATALOG: Song[] = ENTRIES.map(
+  ([title, artist, genre, year, nationalityTags, popularity, moods, vocal]) => {
+    const id = `cat:${title}|${artist}`;
+    return {
+      id,
+      title,
+      artist,
+      genre,
+      year,
+      generationTags: generationsForYear(year),
+      nationalityTags,
+      ...colorsForId(id),
+      origin: "catalog",
+      popularity,
+      moods,
+      vocal,
+      metaStatus: "done",
+    };
+  }
+);
+
+/** 「〇〇をよく聴くあなたに」を作るための、近いアーティストの手入力マップ */
+export const RELATED_ARTISTS: Record<string, string[]> = {
+  YOASOBI: ["ヨルシカ", "Ado", "米津玄師"],
+  ヨルシカ: ["YOASOBI", "米津玄師", "Ado"],
+  Ado: ["YOASOBI", "ヨルシカ", "LiSA"],
+  米津玄師: ["King Gnu", "ヨルシカ", "Official髭男dism"],
+  "Official髭男dism": ["Mrs. GREEN APPLE", "King Gnu", "Vaundy"],
+  "Mrs. GREEN APPLE": ["Official髭男dism", "Vaundy", "SEKAI NO OWARI"],
+  Vaundy: ["King Gnu", "Mrs. GREEN APPLE", "米津玄師"],
+  "King Gnu": ["Vaundy", "米津玄師", "Official髭男dism"],
+  スピッツ: ["BUMP OF CHICKEN", "サザンオールスターズ", "MONGOL800"],
+  "BUMP OF CHICKEN": ["スピッツ", "サカナクション", "レミオロメン"],
+  サカナクション: ["BUMP OF CHICKEN", "Vaundy", "King Gnu"],
+  あいみょん: ["スピッツ", "Mrs. GREEN APPLE", "ヨルシカ"],
+  LiSA: ["Ado", "YOASOBI", "高橋洋子"],
+  星野源: ["Official髭男dism", "サザンオールスターズ", "あいみょん"],
+  サザンオールスターズ: ["スピッツ", "山下達郎", "星野源"],
+  竹内まりや: ["山下達郎", "松原みき"],
+  山下達郎: ["竹内まりや", "松原みき", "サザンオールスターズ"],
+  BTS: ["BLACKPINK", "TWICE", "NewJeans"],
+  BLACKPINK: ["TWICE", "LE SSERAFIM", "BTS"],
+  NewJeans: ["LE SSERAFIM", "TWICE", "BLACKPINK"],
+  TWICE: ["NewJeans", "BLACKPINK", "LE SSERAFIM"],
+  "The Weeknd": ["Dua Lipa", "Ed Sheeran", "Billie Eilish"],
+  "Dua Lipa": ["The Weeknd", "Mark Ronson", "Ed Sheeran"],
+  "Ed Sheeran": ["The Weeknd", "Dua Lipa", "Avicii"],
+  Avicii: ["David Guetta", "Ed Sheeran"],
+  周杰伦: ["陈奕迅"],
+  陈奕迅: ["周杰伦"],
+};

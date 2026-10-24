@@ -1,27 +1,16 @@
-// ドメイン型定義
-// 「音楽で距離を縮める」アプリの中心となるデータモデル
+// musicconnect のドメイン型
 
-/** シーン: どの場面で使うか */
+/** 利用シーン（議事録: カラオケ×世代 / パーティー×国籍 / ドライブ×ジャンル） */
 export type Scene = "karaoke" | "party" | "drive";
 
-export const SCENES: { id: Scene; label: string; emoji: string; description: string }[] = [
-  { id: "karaoke", label: "カラオケ", emoji: "🎤", description: "世代が違っても盛り上がれる曲を見つける" },
-  { id: "party", label: "パーティー", emoji: "🎉", description: "国籍や言語が違う参加者で場を盛り上げる曲を見つける" },
-  { id: "drive", label: "ドライブ", emoji: "🚗", description: "同乗者の好みに合う曲を見つける" },
+export const SCENES: { id: Scene; label: string; gap: string; otherPlaceholder: string }[] = [
+  { id: "karaoke", label: "カラオケ", gap: "世代のギャップ", otherPlaceholder: "みんなで歌える、明るい曲がいい" },
+  { id: "party", label: "パーティー", gap: "国籍のギャップ", otherPlaceholder: "盛り上がる曲。定番すぎない曲も入れたい" },
+  { id: "drive", label: "ドライブ", gap: "ジャンルのギャップ", otherPlaceholder: "夜のドライブで流せる、落ち着いた曲" },
 ];
 
-/** 世代 */
-export type Generation = "teens" | "20s" | "30s" | "40s" | "50plus";
+export type Generation = "teens" | "20s" | "30s" | "40s" | "50s" | "60plus";
 
-export const GENERATIONS: { id: Generation; label: string }[] = [
-  { id: "teens", label: "10代" },
-  { id: "20s", label: "20代" },
-  { id: "30s", label: "30代" },
-  { id: "40s", label: "40代" },
-  { id: "50plus", label: "50代以上" },
-];
-
-/** 国籍（簡易区分） */
 export type Nationality = "JP" | "US" | "KR" | "CN" | "OTHER";
 
 export const NATIONALITIES: { id: Nationality; label: string }[] = [
@@ -32,114 +21,153 @@ export const NATIONALITIES: { id: Nationality; label: string }[] = [
   { id: "OTHER", label: "その他" },
 ];
 
-/** 音楽ジャンル */
 export type Genre =
   | "jpop"
-  | "kpop"
   | "rock"
+  | "anime"
+  | "kpop"
+  | "pop"
   | "hiphop"
   | "edm"
-  | "jazz"
-  | "anime"
   | "citypop"
   | "enka"
+  | "jazz"
   | "classical"
-  | "pop"
   | "other";
 
 export const GENRES: { id: Genre; label: string }[] = [
   { id: "jpop", label: "J-POP" },
-  { id: "kpop", label: "K-POP" },
   { id: "rock", label: "ロック" },
+  { id: "anime", label: "アニソン" },
+  { id: "kpop", label: "K-POP" },
+  { id: "pop", label: "海外ポップ" },
   { id: "hiphop", label: "ヒップホップ" },
   { id: "edm", label: "EDM" },
-  { id: "jazz", label: "ジャズ" },
-  { id: "anime", label: "アニソン" },
   { id: "citypop", label: "シティポップ" },
   { id: "enka", label: "演歌" },
+  { id: "jazz", label: "ジャズ" },
   { id: "classical", label: "クラシック" },
-  { id: "pop", label: "ポップ" },
   { id: "other", label: "その他" },
 ];
 
-/** 楽曲データの出どころ */
-export type SongOrigin = "mock" | "spotify" | "musicbrainz";
+/** ルーム作成画面の「年代」 */
+export type AgeGroup = "10-20" | "20-30" | "40-50" | "60+";
 
-/** 楽曲データ（Spotify / MusicBrainz / モックの違いを吸収した正規化済みの形） */
+export const AGE_GROUPS: { id: AgeGroup; label: string; generations: Generation[] }[] = [
+  { id: "10-20", label: "10〜20代", generations: ["teens", "20s"] },
+  { id: "20-30", label: "20〜30代", generations: ["20s", "30s"] },
+  { id: "40-50", label: "40〜50代", generations: ["40s", "50s"] },
+  { id: "60+", label: "60代以上", generations: ["60plus"] },
+];
+
+/** ルーム作成画面の「性別」（歌う人に合うボーカルの曲を優先する） */
+export type GenderPref = "male" | "female" | "mixed";
+
+export const GENDER_PREFS: { id: GenderPref; label: string }[] = [
+  { id: "male", label: "男性" },
+  { id: "female", label: "女性" },
+  { id: "mixed", label: "男女混合" },
+];
+
+/** 曲の雰囲気タグ（「その他」の自由入力と照合する） */
+export type Mood = "upbeat" | "singalong" | "romantic" | "chill" | "emotional" | "nostalgic" | "summer";
+
+export type SongOrigin = "catalog" | "spotify" | "musicbrainz";
+
+/** 楽曲（Spotify / MusicBrainz / カタログの違いを吸収した形） */
 export interface Song {
   id: string;
   title: string;
   artist: string;
   genre: Genre;
   year: number;
-  /** この曲がよく聴かれる世代（属性レコメンド用のメタデータ、簡易モック） */
   generationTags: Generation[];
-  /** この曲がよく聴かれる国籍（属性レコメンド用のメタデータ、簡易モック） */
   nationalityTags: Nationality[];
-  /** モック用のジャケット代わりの色（将来 albumArtUrl に置き換え） */
   colorFrom: string;
   colorTo: string;
-  origin?: SongOrigin;
-  /** MusicBrainzからジャンル・国の補完が必要か（"pending" の曲はバックグラウンドで補完される） */
+  origin: SongOrigin;
+  artworkUrl?: string;
+  spotifyId?: string;
+  /** 人気度の目安（0〜100）。パーティーで「定番すぎない曲」を混ぜるのに使う */
+  popularity?: number;
+  moods?: Mood[];
+  vocal?: GenderPref;
+  /** MusicBrainzからジャンル・国を補完する必要があるか */
   metaStatus?: "pending" | "done";
-  /** MusicBrainzのアーティストID（分かっていれば補完時の検索精度が上がる） */
   mbArtistId?: string;
 }
 
-/** 参加者（モックではプリセットの人物から選択する） */
-export interface Participant {
+/** AIレコメンドの条件（"any" は指定なし） */
+export interface RoomConditions {
+  gender: GenderPref | "any";
+  genre: Genre | "any";
+  nationality: Nationality | "any";
+  ageGroup: AgeGroup | "any";
+  other: string;
+}
+
+export interface Room {
   id: string;
+  scene: Scene;
+  aiEnabled: boolean;
+  conditions: RoomConditions;
+  hostMemberId: string | null;
+  /** 曲を流す人が最後に選んだ曲 */
+  finalSongId: string | null;
+  createdAt: string;
+}
+
+export interface Member {
+  id: string;
+  roomId: string;
   name: string;
-  emoji: string;
-  generation: Generation;
-  nationality: Nationality;
-  favoriteGenres: Genre[];
-  /** この参加者が「知っている/よく聴く」曲のID一覧 */
-  knownSongIds: string[];
-  origin?: "mock" | "spotify";
+  kind: "spotify" | "guest";
+  joinedAt: string;
 }
 
-/** スワイプ方向 */
-export type SwipeDirection = "up" | "down" | "left" | "right";
-
-/**
- * スワイプ方向 → 0〜3段階評価 のマッピング
- * 右: 3 (大好き) / 上: 2 (好き) / 左: 1 (知ってる) / 下: 0 (興味ない・知らない)
- * TODO: 評価段階の割当は実装都合で決めた仮仕様。UXテスト次第で調整する。
- */
-export const DIRECTION_TO_SCORE: Record<SwipeDirection, 0 | 1 | 2 | 3> = {
-  right: 3,
-  up: 2,
-  left: 1,
-  down: 0,
-};
-
-export const SCORE_LABELS: Record<0 | 1 | 2 | 3, string> = {
-  0: "興味ない",
-  1: "知ってる",
-  2: "好き",
-  3: "大好き",
-};
-
-/** 投票（1参加者 × 1曲） */
-export interface Vote {
-  participantId: string;
+/** 候補への登録1件（同じ曲を複数人が登録すると複数行になる） */
+export interface CandidateEntry {
+  roomId: string;
+  memberId: string;
   songId: string;
-  score: 0 | 1 | 2 | 3;
-  direction: SwipeDirection;
-}
-
-/** 候補曲の出どころ */
-export type CandidateSource = "common" | "submitted" | "recommended";
-
-/** 曲候補一覧で扱う単位（楽曲 + メタ情報） */
-export interface CandidateSong {
   song: Song;
-  source: CandidateSource;
-  /** 共通曲抽出: 何人がこの曲を知っているか */
-  knownByCount: number;
-  /** knownByCount / 参加人数 */
-  knownByRatio: number;
-  /** 属性レコメンドでのマッチ度（0〜1、該当なしは0） */
-  recommendScore: number;
+  source: "spotify" | "manual";
+  /** Spotifyの「過去1ヶ月によく聴いた順位」から求めた重み（0〜1）。手動追加は0 */
+  weight: number;
+  addedAt: string;
 }
+
+/** 0: 今は違う / 1: うーん / 2: Better / 3: Best / null: 知らない・スキップ */
+export type VoteScore = 0 | 1 | 2 | 3;
+
+export interface VoteEntry {
+  roomId: string;
+  memberId: string;
+  songId: string;
+  score: VoteScore | null;
+  updatedAt: string;
+}
+
+export interface RoomSnapshot {
+  room: Room;
+  members: Member[];
+  candidates: CandidateEntry[];
+  votes: VoteEntry[];
+}
+
+/** スワイプ方向 → 点数（議事録: 上がbest、右がgood、下がうーん、左がbad） */
+export type SwipeDirection = "up" | "right" | "down" | "left";
+
+export const SWIPE_SCORES: Record<SwipeDirection, { score: VoteScore; label: string }> = {
+  up: { score: 3, label: "Best" },
+  right: { score: 2, label: "Better" },
+  down: { score: 1, label: "うーん" },
+  left: { score: 0, label: "今は違う" },
+};
+
+export const SCORE_LABELS: Record<VoteScore, string> = {
+  0: "今は違う",
+  1: "うーん",
+  2: "Better",
+  3: "Best",
+};

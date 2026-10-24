@@ -1,12 +1,40 @@
 import type { Generation, Genre, Nationality, Song } from "@/types";
 
+/** Spotify等が英語表記で返す日本のアーティスト名を、カタログの表記に寄せる */
+const ARTIST_ALIASES: Record<string, string> = {
+  "kenshi yonezu": "米津玄師",
+  "official hige dandism": "Official髭男dism",
+  spitz: "スピッツ",
+  aimyon: "あいみょん",
+  yorushika: "ヨルシカ",
+  sakanaction: "サカナクション",
+  "southern all stars": "サザンオールスターズ",
+  "mariya takeuchi": "竹内まりや",
+  "tatsuro yamashita": "山下達郎",
+  "miki matsubara": "松原みき",
+  "hibari misora": "美空ひばり",
+  "sayuri ishikawa": "石川さゆり",
+  "gen hoshino": "星野源",
+  "hikaru utada": "宇多田ヒカル",
+  "miyuki nakajima": "中島みゆき",
+  "yoko takahashi": "高橋洋子",
+  remioromen: "レミオロメン",
+  "jay chou": "周杰伦",
+  "eason chan": "陈奕迅",
+};
+
+export function canonicalArtist(artist: string): string {
+  const trimmed = artist.trim();
+  return ARTIST_ALIASES[trimmed.toLowerCase()] ?? trimmed;
+}
+
 /**
- * 曲が「被っている」かの判定キー。
- * TODO: 現状は「タイトル＋アーティスト名の完全一致」。Spotifyの英語表記（Kenshi Yonezu）と
- * 日本語表記（米津玄師）のような表記揺れや、ジャンル/アーティスト単位の緩い一致には未対応。
+ * 曲が「被っている」かの判定キー（議事録の仮決定: タイトル＋アーティスト名の一致）。
+ * アーティスト名は英語表記→日本語表記の別名を吸収している。
+ * TODO: 曲名の表記揺れ（Idol / アイドル）や、ジャンル/アーティスト単位の緩い一致には未対応。
  */
 export function normalizeKey(song: Pick<Song, "title" | "artist">): string {
-  return `${song.title.trim().toLowerCase()}__${song.artist.trim().toLowerCase()}`;
+  return `${song.title.trim().toLowerCase()}__${canonicalArtist(song.artist).toLowerCase()}`;
 }
 
 // 上から順に判定する（"city pop" を "pop" より先に見るなど、順序に意味がある）
@@ -49,7 +77,8 @@ const GENERATION_AGE_RANGES: { id: Generation; min: number; max: number }[] = [
   { id: "20s", min: 20, max: 29 },
   { id: "30s", min: 30, max: 39 },
   { id: "40s", min: 40, max: 49 },
-  { id: "50plus", min: 50, max: 90 },
+  { id: "50s", min: 50, max: 59 },
+  { id: "60plus", min: 60, max: 90 },
 ];
 
 /**

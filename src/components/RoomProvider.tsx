@@ -1,0 +1,164 @@
+"use client";
+
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import type { Member, RoomSnapshot } from "@/types";
+import { roomBackend } from "@/lib/room";
+import { useRoomIdentity } from "@/lib/room/identity";
+import { CATALOG } from "@/lib/music-source";
+import { applyArtistMeta, lookupArtistMeta } from "@/lib/music-source/musicbrainz";
+import { canonicalArtist } from "@/lib/music-source/normalize";
+import { recommendForRoom, type Recommendation } from "@/lib/logic/recommend";
+import { buildCandidatePool, rankWithVotes, voteDeck, type PoolItem, type RankedItem } from "@/lib/logic/ranking";
+import { Spinner } from "./ui";
+
+export interface RoomView {
+  roomId: string;
+  snapshot: RoomSnapshot;
+  me: Member;
+  isHost: boolean;
+  aiRecommendations: Recommendation[];
+  pool: PoolItem[];
+  deck: PoolItem[];
+  ranking: RankedItem[];
+  updatedAt: number;
+  refresh: () => void;
+}
+
+const RoomContext = createContext<RoomView | null>(null);
+
+export function useRoom(): RoomView {
+  const view = useContext(RoomContext);
+  if (!view) throw new Error("useRoom は RoomProvider の内側で使ってください");
+  return view;
+}
+
+type LoadState =
+  | { roomId: string; status: "ready"; snapshot: RoomSnapshot; updatedAt: number }
+  | { roomId: string; status: "missing" | "error" };
+
+/** ルームの最新状態を取得し、変更があれば取り直す（Supabase Realtime / 同一ブラウザ内の通知） */
+function useRoomSnapshot(roomId: string | null) {
+  const [state, setState] = useState<LoadState | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    if (!roomId) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const load = () =>
+      roomBackend
+        .fetchSnapshot(roomId)
+        .then((snapshot) => {
+          if (cancelled) return;
+          setState(
+            snapshot ? { roomId, status: "ready", snapshot, updatedAt: Date.now() } : { roomId, status: "missing" }
+          );
+        })
+        .catch(() => !cancelled && setState({ roomId, status: "error" }));
+    load();
+    const unsubscribe = roomBackend.subscribe(roomId, () => {
+      clearTimeout(timer);
+      timer = setTimeout(load, 150);
+    });
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      unsubscribe();
+    };
+  }, [roomId, reloadKey]);
+
+  const refresh = useCallback(() => setReloadKey((k) => k + 1), []);
+  return { state: state?.roomId === roomId ? state : null, refresh };
+}
+
+/** 自分が持ち込んだ曲のジャンル・国を、アーティスト単位でMusicBrainzから補完する */
+function useMetadataEnrichment(snapshot: RoomSnapshot | null, memberId: string | null) {
+  const running = useRef(false);
+  const [tick, setTick] = useState(0);
+  const pending = useMemo(
+    () => snapshot?.candidates.filter((c) => c.memberId === memberId && c.song.metaStatus === "pending") ?? [],
+    [snapshot, memberId]
+  );
+
+  useEffect(() => {
+    if (!snapshot || !memberId || pending.length === 0 || running.current) return;
+    running.current = true;
+    const first = pending[0].song;
+    const artist = canonicalArtist(first.artist);
+    const sameArtist = pending.filter((c) => canonicalArtist(c.song.artist) === artist).map((c) => c.song);
+    lookupArtistMeta(first.artist, first.mbArtistId)
+      .catch(() => null)
+      .then((meta) => roomBackend.updateCandidateSongs(snapshot.room.id, memberId, sameArtist.map((s) => applyArtistMeta(s, meta))))
+      .catch(() => undefined)
+      .finally(() => {
+        running.current = false;
+        setTick((t) => t + 1);
+      });
+  }, [snapshot, memberId, pending, tick]);
+}
+
+function Message({ title, body, roomId }: { title: string; body: string; roomId?: string | null }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
+      <p className="text-lg font-bold">{title}</p>
+      <p className="text-sm leading-relaxed text-muted">{body}</p>
+      <Link href={roomId ? `/join?room=${roomId}` : "/"} className="mt-2 text-sm font-bold text-teal underline">
+        {roomId ? "参加画面へ" : "トップへ戻る"}
+      </Link>
+    </div>
+  );
+}
+
+export default function RoomProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const roomId = useSearchParams().get("room");
+  const identity = useRoomIdentity(roomId);
+  const { state, refresh } = useRoomSnapshot(roomId);
+
+  const snapshot = state?.status === "ready" ? state.snapshot : null;
+  const me = snapshot?.members.find((m) => m.id === identity?.memberId) ?? null;
+  useMetadataEnrichment(snapshot, me?.id ?? null);
+
+  const notJoined = identity !== undefined && snapshot !== null && !me;
+  useEffect(() => {
+    if (notJoined && roomId) router.replace(`/join?room=${roomId}`);
+  }, [notJoined, roomId, router]);
+
+  const view = useMemo<RoomView | null>(() => {
+    if (!snapshot || !me || !roomId || state?.status !== "ready") return null;
+    const aiRecommendations = recommendForRoom(snapshot.room, snapshot.candidates, CATALOG);
+    const pool = buildCandidatePool(snapshot, aiRecommendations);
+    return {
+      roomId,
+      snapshot,
+      me,
+      isHost: snapshot.room.hostMemberId === me.id || Boolean(identity?.isHost),
+      aiRecommendations,
+      pool,
+      deck: voteDeck(pool),
+      ranking: rankWithVotes(pool, snapshot.votes),
+      updatedAt: state.updatedAt,
+      refresh,
+    };
+  }, [snapshot, me, roomId, state, identity, refresh]);
+
+  if (!roomId) return <Message title="ルームが指定されていません" body="招待URLをもう一度開いてください。" />;
+  if (state?.status === "missing")
+    return (
+      <Message
+        title="ルームが見つかりません"
+        body={
+          roomBackend.kind === "local"
+            ? "いまはデモモード（この端末のブラウザ内だけで共有）です。別の端末で作ったルームには参加できません。"
+            : "招待URLが正しいか確認してください。"
+        }
+      />
+    );
+  if (state?.status === "error")
+    return <Message title="読み込みに失敗しました" body="通信状況を確認して、ページを再読み込みしてください。" />;
+  if (!view) return <Spinner label="ルームを読み込み中…" />;
+
+  return <RoomContext.Provider value={view}>{children}</RoomContext.Provider>;
+}
