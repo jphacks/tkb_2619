@@ -1,5 +1,9 @@
 # Music Bridge（音楽で距離を縮める）
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/jphacks/tkb_2619?quickstart=1)
+
+上のバッジをクリックするだけで、インストール作業なしにブラウザ上でアプリを起動できます（GitHub Codespaces）。数十秒〜数分待つと自動で `npm install` → `npm run dev` が実行され、ポート3000のプレビューが自動で開きます。
+
 ## 製品概要
 ### 背景(製品開発のきっかけ、課題等）
 - カラオケでは世代が違うと相手の知っている曲が分からず選曲に時間がかかる
@@ -44,6 +48,10 @@ Music Bridge は、参加者の「知ってる曲・よく聴く曲」や世代�
 
 ## セットアップ手順
 
+### GitHub Codespaces（インストール不要・一番簡単）
+上部の「Open in GitHub Codespaces」バッジをクリックするだけで起動できます。
+
+### ローカル環境で起動する場合
 ```bash
 npm install
 npm run dev
