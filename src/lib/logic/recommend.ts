@@ -1,5 +1,6 @@
 import {
   AGE_GROUPS,
+  FULLY_TAGGED_NATIONALITIES,
   GENDERS,
   GENRES,
   NATIONALITIES,
@@ -79,7 +80,12 @@ function checkConditions(song: Song, c: Room["conditions"]): ConditionCheck[] {
   // 国籍・年代: 選んだ属性のうち、いくつでよく聴かれているか（全員に届く曲ほど高い）
   if (c.nationalities.length > 0) {
     const hit = c.nationalities.filter((n) => song.nationalityTags.includes(n));
-    checks.push({ score: hit.length / c.nationalities.length, label: hit.length ? `${labelsOf(hit, NATIONALITIES)}で人気` : null });
+    // 個別のタグが少ない国は、海外で広く人気（OTHER）の曲なら届くとみなす
+    const viaGlobal = c.nationalities.filter(
+      (n) => !hit.includes(n) && !FULLY_TAGGED_NATIONALITIES.includes(n) && song.nationalityTags.includes("OTHER"),
+    );
+    const label = hit.length ? `${labelsOf(hit, NATIONALITIES)}で人気` : viaGlobal.length ? "海外で人気" : null;
+    checks.push({ score: (hit.length + viaGlobal.length) / c.nationalities.length, label });
   }
   if (c.ageGroups.length > 0) {
     const hit = c.ageGroups.filter((id) =>

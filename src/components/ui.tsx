@@ -59,7 +59,7 @@ export function SpotifyLogo({ size = 22 }: { size?: number }) {
       <circle cx="12" cy="12" r="12" fill="currentColor" />
       <path
         d="M6.5 9.4c3.7-1.1 7.9-.8 11.2 1M7.1 12.5c3-.8 6.4-.5 9.1 1M7.7 15.4c2.4-.6 4.9-.4 7 .8"
-        stroke="var(--color-accent)"
+        stroke="var(--color-spotify)"
         strokeWidth="1.6"
         strokeLinecap="round"
         fill="none"
@@ -70,6 +70,10 @@ export function SpotifyLogo({ size = 22 }: { size?: number }) {
 
 export const primaryButton =
   "flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-5 py-4 text-[16px] font-bold text-on-accent shadow-sm transition hover:bg-accent-dark active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50";
+
+/** Spotify連携ボタン。Spotifyのブランドカラーにして、アプリのオレンジのボタンと区別する */
+export const spotifyButton =
+  "flex w-full items-center justify-center gap-2 rounded-2xl bg-spotify px-5 py-4 text-[16px] font-bold text-on-spotify shadow-sm transition hover:bg-spotify-dark active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50";
 
 export const outlineButton =
   "flex w-full items-center justify-center gap-2 rounded-2xl border-[1.5px] border-accent/70 bg-surface px-5 py-3.5 text-[15px] font-bold text-ink transition hover:bg-accent-soft active:scale-[0.99] disabled:opacity-50";

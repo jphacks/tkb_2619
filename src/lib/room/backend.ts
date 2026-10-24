@@ -1,5 +1,5 @@
-import { EMPTY_CONDITIONS } from "@/types";
-import type { CandidateEntry, Member, Room, RoomConditions, RoomSnapshot, Song, VoteScore } from "@/types";
+import { EMPTY_CONDITIONS, LEGACY_AGE_GROUPS } from "@/types";
+import type { AgeGroup, CandidateEntry, Member, Room, RoomConditions, RoomSnapshot, Song, VoteScore } from "@/types";
 
 export interface NewRoomInput {
   aiEnabled: boolean;
@@ -23,7 +23,7 @@ export function parseConditions(raw: unknown): RoomConditions {
     genders: list("genders", "gender"),
     genres: list("genres", "genre"),
     nationalities: list("nationalities", "nationality"),
-    ageGroups: list("ageGroups", "ageGroup"),
+    ageGroups: [...new Set(list<string>("ageGroups", "ageGroup").flatMap((id) => LEGACY_AGE_GROUPS[id] ?? [id as AgeGroup]))],
     other: typeof r.other === "string" ? r.other : "",
   };
 }

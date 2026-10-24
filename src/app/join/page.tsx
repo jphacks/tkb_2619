@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, User } from "lucide-react";
-import { AppHeader, outlineButton, primaryButton, Spinner, SpotifyLogo } from "@/components/ui";
+import { AppHeader, outlineButton, primaryButton, Spinner, SpotifyLogo, spotifyButton } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
 import { saveIdentity, useRoomIdentity } from "@/lib/room/identity";
 import { startSpotifyLogin } from "@/lib/music-source/spotify";
@@ -91,7 +91,7 @@ function JoinRoom() {
       <AppHeader title="ルームに参加" backHref="/" />
       <main className="flex flex-1 flex-col px-4 pb-8">
         <section className="flex flex-col items-center rounded-2xl bg-surface px-5 pb-8 pt-10 text-center">
-          <span className="font-display text-[32px] leading-none text-accent">ミューコネ</span>
+          <span className="font-display text-[32px] leading-none text-accent">Musiconnect</span>
           <h2 className="mt-5 text-[22px] font-bold">みんなの選曲ルーム</h2>
           <p className="mt-1.5 text-[14px] text-muted">
             {snapshot.members.length > 0 ? `${snapshot.members.length}人が参加中 · ` : ""}参加方法を選んでください
@@ -99,7 +99,7 @@ function JoinRoom() {
 
           {mode === "choose" ? (
             <div className="mt-8 flex w-full flex-col gap-3">
-              <button type="button" onClick={joinWithSpotify} disabled={busy} className={primaryButton}>
+              <button type="button" onClick={joinWithSpotify} disabled={busy} className={spotifyButton}>
                 <SpotifyLogo />
                 <span className="flex-1 text-center">{busy ? "Spotifyに移動中…" : "Spotifyで登録・連携"}</span>
                 <ChevronRight size={20} />
