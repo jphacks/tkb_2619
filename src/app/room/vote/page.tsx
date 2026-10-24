@@ -13,7 +13,7 @@ import { SWIPE_SCORES, type SwipeDirection, type VoteScore } from "@/types";
 
 const SCORE_BUTTONS: { score: VoteScore; label: string; className: string; direction: SwipeDirection }[] = [
   { score: 0, label: "Nope", className: "bg-no-soft text-no", direction: "left" },
-  { score: 1, label: "Meh", className: "bg-meh-soft text-meh", direction: "down" },
+  { score: 1, label: "So-so", className: "bg-meh-soft text-meh", direction: "down" },
   { score: 2, label: "Better", className: "bg-better-soft text-better", direction: "right" },
   { score: 3, label: "Best", className: "bg-best-soft text-best", direction: "up" },
 ];

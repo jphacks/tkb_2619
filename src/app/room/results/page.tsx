@@ -9,7 +9,7 @@ import SongArtwork from "@/components/SongArtwork";
 import { roomBackend } from "@/lib/room";
 import { spotifyOpenUrl } from "@/lib/music-source/spotify";
 
-const SHOWN = 10;
+const SHOWN = 20;
 
 function useNow(intervalMs: number) {
   const [now, setNow] = useState(() => Date.now());
