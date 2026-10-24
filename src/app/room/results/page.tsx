@@ -63,7 +63,7 @@ export default function ResultsPage() {
     <>
       <AppHeader title="投票結果" backHref={`/room?room=${roomId}`} />
       <main className="flex flex-1 flex-col gap-3 px-4 pb-6">
-        <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3">
           <span className="flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1.5 text-[13px] font-bold text-accent">
             <span className="relative flex h-2.5 w-2.5">
               <span className="absolute h-full w-full animate-ping rounded-full bg-accent/60" />

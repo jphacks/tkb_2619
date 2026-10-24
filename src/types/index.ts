@@ -1,4 +1,4 @@
-// musicconnect のドメイン型
+// MusiConnect のドメイン型
 
 export type Generation = "teens" | "20s" | "30s" | "40s" | "50s" | "60plus";
 

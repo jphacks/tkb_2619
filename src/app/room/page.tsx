@@ -2,24 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, ChevronRight, Copy, Crown, Heart, Music, Sparkles, UserPlus, Users } from "lucide-react";
-import { AppHeader, TabBar } from "@/components/ui";
+import { Check, Copy, Plus, UserPlus } from "lucide-react";
+import { AppHeader, TabBar, primaryButton } from "@/components/ui";
 import { useRoom } from "@/components/RoomProvider";
 import FinalSongBanner from "@/components/FinalSongBanner";
 import { roomBackend } from "@/lib/room";
 import { BASE_PATH } from "@/lib/config";
 import { addDemoMembers } from "@/lib/demo";
-import { myVoteFor } from "@/lib/logic/ranking";
 import { AGE_GROUPS, GENDERS, GENRES, NATIONALITIES } from "@/types";
 
-const MENU = [
-  { tab: "add", title: "手動で曲を選択", body: "検索・おすすめから候補を追加", Icon: Music, color: "bg-accent-soft text-accent" },
-  { tab: "vote", title: "投票", body: "スワイプで聴きたい曲を評価", Icon: Heart, color: "bg-heart-soft text-heart" },
-  { tab: "results", title: "結果", body: "最新のランキングを見る", Icon: Crown, color: "bg-crown-soft text-crown" },
-] as const;
-
 export default function RoomHubPage() {
-  const { roomId, snapshot, me, isHost, deck } = useRoom();
+  const { roomId, snapshot, me, isHost } = useRoom();
   const [copied, setCopied] = useState(false);
   const [demoState, setDemoState] = useState<"idle" | "adding" | "done">("idle");
   const { room, members } = snapshot;
@@ -53,54 +46,40 @@ export default function RoomHubPage() {
     }
   };
 
-  const myVotes = deck.filter((item) => myVoteFor(item, snapshot.votes, me.id)).length;
-
   return (
     <>
       <AppHeader title="みんなの選曲ルーム" backHref="/" />
-      <main className="flex flex-1 flex-col gap-3 px-4 pb-6">
-        <div className="flex justify-center">
-          <span className="flex items-center gap-1.5 rounded-full bg-ink/10 px-3.5 py-1.5 text-[13px] font-bold">
-            <Users size={15} />
-            {members.length}人が参加中
-          </span>
-        </div>
-
+      <main className="flex flex-1 flex-col gap-6 px-5 pb-6 pt-2">
         <FinalSongBanner />
 
-        {MENU.map(({ tab, title, body, Icon, color }) => (
-          <Link
-            key={tab}
-            href={`/room/${tab}?room=${roomId}`}
-            className="flex items-center gap-4 rounded-2xl bg-surface p-5 shadow-[0_1px_3px_rgba(0,0,0,0.05)] transition active:scale-[0.99]"
-          >
-            <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${color}`}>
-              <Icon size={26} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[18px] font-bold">{title}</span>
-              <span className="block text-[13px] text-muted">
-                {tab === "vote" && deck.length > 0 ? `${body}（${myVotes}/${deck.length}曲）` : body}
-              </span>
-            </span>
-            <ChevronRight size={22} className="text-muted" />
-          </Link>
-        ))}
+        {/* 投票と結果は下のタブから行けるので、ここでは「次にやること」だけを置く */}
+        <section>
+          <p className="text-[13px] text-muted">いまの参加者</p>
+          <p className="mt-1 font-display text-[40px] leading-none">
+            {members.length}
+            <span className="ml-1 font-sans text-[16px] font-bold">人</span>
+          </p>
+          <p className="mt-2 text-[14px] leading-relaxed">
+            {members.map((m) => (m.id === me.id ? `${m.name}（あなた）` : m.name)).join("、")}
+          </p>
+        </section>
 
-        <section className="mt-2 rounded-2xl bg-surface p-4 text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+        <Link href={`/room/add?room=${roomId}`} className={primaryButton}>
+          <Plus size={20} />
+          曲を候補に入れる
+        </Link>
+
+        <section className="border-t border-line pt-4 text-[13px]">
           <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-0.5 text-muted">
-              <Sparkles size={12} />
-              AIレコメンド{room.aiEnabled ? "ON" : "OFF"}
-            </span>
+            <span className="text-muted">友だちを呼ぶ</span>
             <button type="button" onClick={copyInvite} className="flex items-center gap-1 font-bold text-accent">
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? "コピーしました" : "招待URLをコピー"}
             </button>
           </div>
-          {room.aiEnabled && conditionText && <p className="mt-1.5 text-[12px] text-muted">集まる人: {conditionText}</p>}
-          <p className="mt-1.5 text-[12px] text-muted">
-            参加者: {members.map((m) => (m.id === me.id ? `${m.name}（あなた）` : m.name)).join("、")}
+          <p className="mt-3 text-muted">
+            おすすめ曲の提案: {room.aiEnabled ? "ON" : "OFF"}
+            {room.aiEnabled && conditionText && `（${conditionText}）`}
           </p>
         </section>
 

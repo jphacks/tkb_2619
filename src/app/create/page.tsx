@@ -91,7 +91,7 @@ export default function CreateRoomPage() {
     <>
       <AppHeader title="ルームを作成" backHref="/" />
       <main className="flex flex-1 flex-col gap-4 px-4 pb-8">
-        <section className="rounded-2xl bg-surface px-4 pb-1 pt-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+        <section className="rounded-2xl bg-surface px-4 pb-1 pt-4">
           <div className="flex items-center justify-between">
             <span className="text-[18px] font-bold">AIレコメンド</span>
             <div className="grid grid-cols-2 rounded-xl border border-line bg-app p-1">
@@ -159,7 +159,7 @@ export default function CreateRoomPage() {
         {error && <p className="text-center text-[13px] text-heart">{error}</p>}
 
         {room && (
-          <section className="flex items-center gap-2 rounded-2xl bg-surface px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+          <section className="flex items-center gap-2 rounded-2xl bg-surface px-4 py-3">
             <span className="shrink-0 text-[14px] font-bold">招待URL</span>
             <span className="min-w-0 flex-1 truncate rounded-lg bg-app px-3 py-2 text-[13px] text-muted">{inviteUrl}</span>
             <button

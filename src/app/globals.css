@@ -2,6 +2,8 @@
 
 @theme inline {
   --font-sans: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  /* アプリ名と大きな見出しだけに使う、ライブのフライヤーのような太い書体 */
+  --font-display: "Dela Gothic One", "Hiragino Sans", "Noto Sans JP", sans-serif;
 
   /* テーマ「ナイト」: こげ茶の夜にオレンジが灯る */
   --color-cream: #140d0a;

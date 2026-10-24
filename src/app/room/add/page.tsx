@@ -89,7 +89,7 @@ export default function AddSongsPage() {
     <>
       <AppHeader title="曲を候補に追加" backHref={`/room?room=${roomId}`} />
       <main className="flex flex-1 flex-col px-4 pb-6">
-        <div className="flex items-center gap-2.5 rounded-2xl border border-line bg-surface px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] focus-within:border-accent">
+        <div className="flex items-center gap-2.5 rounded-2xl border border-line bg-surface px-4 py-3.5 focus-within:border-accent">
           <Search size={22} className="shrink-0 text-ink" />
           <input
             value={input}
@@ -112,7 +112,7 @@ export default function AddSongsPage() {
         {typed && (
           <section className="mt-5">
             <h2 className="text-[17px] font-bold">検索結果</h2>
-            <div className="mt-1 divide-y divide-line rounded-2xl bg-surface px-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+            <div className="mt-1 divide-y divide-line rounded-2xl bg-surface px-4">
               {searching && <p className="py-5 text-center text-[13px] text-muted">検索中…</p>}
               {showingResults && search.error && (
                 <p className="py-5 text-center text-[13px] text-heart">検索に失敗しました。少し待ってからもう一度お試しください。</p>
@@ -134,7 +134,7 @@ export default function AddSongsPage() {
               ? "保存した曲・アーティストをもとに"
               : "このルームの条件をもとに（曲を追加すると好みに合わせて変わります）"}
           </p>
-          <div className="mt-2 divide-y divide-line rounded-2xl bg-surface px-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+          <div className="mt-2 divide-y divide-line rounded-2xl bg-surface px-4">
             {recommendations.length === 0 ? (
               <p className="py-5 text-center text-[13px] text-muted">おすすめはまだありません</p>
             ) : (

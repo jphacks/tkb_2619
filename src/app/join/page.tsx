@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, Music, User } from "lucide-react";
+import { ChevronRight, User } from "lucide-react";
 import { AppHeader, outlineButton, primaryButton, Spinner, SpotifyLogo } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
 import { saveIdentity, useRoomIdentity } from "@/lib/room/identity";
@@ -90,13 +90,8 @@ function JoinRoom() {
     <>
       <AppHeader title="ルームに参加" backHref="/" />
       <main className="flex flex-1 flex-col px-4 pb-8">
-        <section className="flex flex-col items-center rounded-2xl bg-surface px-5 pb-8 pt-10 text-center shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-          <span className="relative text-accent">
-            <Music size={52} strokeWidth={2.2} />
-            <span className="absolute -left-5 -top-2 h-3 w-[2px] -rotate-45 rounded bg-accent" />
-            <span className="absolute -top-4 left-5 h-3 w-[2px] rounded bg-accent" />
-            <span className="absolute -right-4 -top-2 h-3 w-[2px] rotate-45 rounded bg-accent" />
-          </span>
+        <section className="flex flex-col items-center rounded-2xl bg-surface px-5 pb-8 pt-10 text-center">
+          <span className="font-display text-[32px] leading-none text-accent">MusiConnect</span>
           <h2 className="mt-5 text-[22px] font-bold">みんなの選曲ルーム</h2>
           <p className="mt-1.5 text-[14px] text-muted">
             {snapshot.members.length > 0 ? `${snapshot.members.length}人が参加中 · ` : ""}参加方法を選んでください

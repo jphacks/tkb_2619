@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Car, ChevronRight, Mic, Music, PartyPopper } from "lucide-react";
+import { ArrowRight, Car, Mic, PartyPopper } from "lucide-react";
 import { primaryButton } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
 
@@ -27,39 +27,41 @@ export default function HomePage() {
   const roomId = parseRoomId(invite);
 
   return (
-    <main className="flex flex-1 flex-col px-5 pb-10 pt-12">
-      <div className="flex flex-col items-center text-center">
-        <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-on-accent shadow-md">
-          <Music size={32} />
-        </span>
-        <h1 className="mt-4 text-[28px] font-black tracking-tight">musicconnect</h1>
-        <p className="mt-1 text-[15px] font-medium text-muted">音楽で人と人を繋ぐ</p>
-        <p className="mt-6 text-[15px] leading-relaxed">
-          共通の一曲が、心を繋ぐ。
-          <br />
-          みんなが知っている曲・聴きたい曲を、投票で選ぼう。
-        </p>
-      </div>
+    <main className="flex flex-1 flex-col px-6 pb-10 pt-16">
+      <h1 className="font-display text-[44px] leading-[1.05] text-accent">
+        Musi
+        <br />
+        Connect
+      </h1>
+      <p className="mt-5 text-[22px] font-bold leading-snug">
+        共通の一曲が、
+        <br />
+        心を繋ぐ。
+      </p>
+      <p className="mt-3 text-[14px] leading-relaxed text-muted">
+        みんなが知っている曲、聴きたい曲を
+        <br />
+        投票で決めよう。
+      </p>
 
-      <div className="mt-8 grid grid-cols-3 gap-2.5">
+      <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[15px] font-bold">
         {SCENES.map(({ Icon, title }) => (
-          <div key={title} className="flex flex-col items-center gap-2 rounded-2xl bg-surface px-2 py-4">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent-soft text-accent">
-              <Icon size={21} />
-            </span>
-            <p className="text-[14px] font-bold">{title}</p>
-          </div>
+          <li key={title} className="flex items-center gap-1.5">
+            <Icon size={18} className="text-accent" />
+            {title}
+          </li>
         ))}
-      </div>
-      <p className="mt-2.5 text-center text-[13px] text-muted">みんなで音楽を流す場面なら、どこでも</p>
+      </ul>
 
-      <Link href="/create" className={`${primaryButton} mt-8`}>
-        ルームを作成
-        <ChevronRight size={20} />
+      <div className="flex-1" />
+
+      <Link href="/create" className={`${primaryButton} mt-10`}>
+        ルームを作る
+        <ArrowRight size={20} />
       </Link>
 
-      <div className="mt-6 rounded-2xl bg-surface p-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-        <p className="text-[14px] font-bold">招待されたルームに参加</p>
+      <div className="mt-8 border-t border-line pt-5">
+        <p className="text-[13px] text-muted">招待された人はこちら</p>
         <div className="mt-2.5 flex gap-2">
           <input
             value={invite}

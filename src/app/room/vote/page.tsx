@@ -96,7 +96,7 @@ export default function VotePage() {
   return (
     <>
       <main className="flex flex-1 flex-col px-4 pb-4 pt-6">
-        <h1 className="text-center text-[22px] font-bold">この曲、聴きたい？</h1>
+        <h1 className="text-center font-display text-[24px] leading-tight">この曲、聴きたい？</h1>
 
         {deck.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
@@ -107,8 +107,7 @@ export default function VotePage() {
           </div>
         ) : !current ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-            <p className="text-[40px]">🎉</p>
-            <p className="text-[17px] font-bold">{deck.length}曲すべて評価しました</p>
+                        <p className="text-[17px] font-bold">{deck.length}曲すべて評価しました</p>
             <p className="text-[13px] text-muted">みんなの投票が入るたびにランキングが更新されます</p>
             <Link href={`/room/results?room=${roomId}`} className={`${primaryButton} max-w-xs`}>
               結果を見る
