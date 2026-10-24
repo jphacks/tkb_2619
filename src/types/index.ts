@@ -1,16 +1,57 @@
-// ミューコネ（MusiConnect）のドメイン型
+// Musiconnect のドメイン型
 
 export type Generation = "teens" | "20s" | "30s" | "40s" | "50s" | "60plus";
 
-export type Nationality = "JP" | "US" | "KR" | "CN" | "OTHER";
+export type Nationality =
+  | "JP"
+  | "US"
+  | "KR"
+  | "CN"
+  | "TW"
+  | "GB"
+  | "FR"
+  | "DE"
+  | "IT"
+  | "ES"
+  | "CA"
+  | "AU"
+  | "BR"
+  | "MX"
+  | "IN"
+  | "TH"
+  | "VN"
+  | "PH"
+  | "ID"
+  | "OTHER";
 
 export const NATIONALITIES: { id: Nationality; label: string }[] = [
   { id: "JP", label: "日本" },
   { id: "US", label: "アメリカ" },
   { id: "KR", label: "韓国" },
   { id: "CN", label: "中国" },
+  { id: "TW", label: "台湾" },
+  { id: "GB", label: "イギリス" },
+  { id: "FR", label: "フランス" },
+  { id: "DE", label: "ドイツ" },
+  { id: "IT", label: "イタリア" },
+  { id: "ES", label: "スペイン" },
+  { id: "CA", label: "カナダ" },
+  { id: "AU", label: "オーストラリア" },
+  { id: "BR", label: "ブラジル" },
+  { id: "MX", label: "メキシコ" },
+  { id: "IN", label: "インド" },
+  { id: "TH", label: "タイ" },
+  { id: "VN", label: "ベトナム" },
+  { id: "PH", label: "フィリピン" },
+  { id: "ID", label: "インドネシア" },
   { id: "OTHER", label: "その他" },
 ];
+
+/**
+ * カタログの曲に人気の国を網羅的に付けている国。
+ * それ以外の国は個別のタグが少ないため、「海外で広く人気（OTHER）」の曲も当てはまるとみなす。
+ */
+export const FULLY_TAGGED_NATIONALITIES: Nationality[] = ["JP", "US", "KR", "CN"];
 
 export type Genre =
   | "jpop"
@@ -41,15 +82,25 @@ export const GENRES: { id: Genre; label: string }[] = [
   { id: "other", label: "その他" },
 ];
 
-/** ルーム作成画面の「年代」 */
-export type AgeGroup = "10-20" | "20-30" | "40-50" | "60+";
+/** ルーム作成画面の「年代」（10年単位。曲側の世代タグと1対1で対応する） */
+export type AgeGroup = Generation;
 
 export const AGE_GROUPS: { id: AgeGroup; label: string; generations: Generation[] }[] = [
-  { id: "10-20", label: "10〜20代", generations: ["teens", "20s"] },
-  { id: "20-30", label: "20〜30代", generations: ["20s", "30s"] },
-  { id: "40-50", label: "40〜50代", generations: ["40s", "50s"] },
-  { id: "60+", label: "60代以上", generations: ["60plus"] },
+  { id: "teens", label: "10代", generations: ["teens"] },
+  { id: "20s", label: "20代", generations: ["20s"] },
+  { id: "30s", label: "30代", generations: ["30s"] },
+  { id: "40s", label: "40代", generations: ["40s"] },
+  { id: "50s", label: "50代", generations: ["50s"] },
+  { id: "60plus", label: "60代以上", generations: ["60plus"] },
 ];
+
+/** 以前の「2世代まとめ」の年代ID。保存済みのルームを読むときに10年単位へ読み替える */
+export const LEGACY_AGE_GROUPS: Record<string, AgeGroup[]> = {
+  "10-20": ["teens", "20s"],
+  "20-30": ["20s", "30s"],
+  "40-50": ["40s", "50s"],
+  "60+": ["60plus"],
+};
 
 /** 曲のボーカル */
 export type Vocal = "male" | "female" | "mixed";

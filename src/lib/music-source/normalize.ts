@@ -1,3 +1,4 @@
+import { NATIONALITIES } from "@/types";
 import type { Generation, Genre, Nationality, Song } from "@/types";
 
 /** Spotify等が英語表記で返す日本のアーティスト名を、カタログの表記に寄せる */
@@ -68,8 +69,8 @@ export function mapTagsToGenre(tags: string[], nationality?: Nationality): Genre
 /** MusicBrainzの国コード（ISO 3166-1）をアプリの国籍区分に寄せる */
 export function mapCountryToNationality(country?: string): Nationality | undefined {
   if (!country) return undefined;
-  if (country === "JP" || country === "US" || country === "KR" || country === "CN") return country;
-  return "OTHER";
+  const known = NATIONALITIES.find((n) => n.id === country && n.id !== "OTHER");
+  return known ? known.id : "OTHER";
 }
 
 const GENERATION_AGE_RANGES: { id: Generation; min: number; max: number }[] = [

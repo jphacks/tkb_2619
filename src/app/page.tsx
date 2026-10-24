@@ -7,10 +7,11 @@ import { ArrowRight, Car, Mic, PartyPopper } from "lucide-react";
 import { primaryButton } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
 
+// 例はあくまで使い方のヒント。ルームの相手を限定するものではない
 const SCENES = [
-  { Icon: Mic, title: "カラオケ" },
-  { Icon: PartyPopper, title: "パーティー" },
-  { Icon: Car, title: "ドライブ" },
+  { Icon: Mic, title: "カラオケ", example: "上司や先輩など、世代が違う人と" },
+  { Icon: PartyPopper, title: "パーティー", example: "留学生など、国籍が違う人と" },
+  { Icon: Car, title: "ドライブ", example: "好きな音楽ジャンルが違う人と" },
 ];
 
 /** 招待URLでもルームIDだけでも受け付ける */
@@ -28,8 +29,7 @@ export default function HomePage() {
 
   return (
     <main className="flex flex-1 flex-col px-6 pb-10 pt-16">
-      <h1 className="font-display text-[52px] leading-none text-accent">ミューコネ</h1>
-      <p className="mt-2 text-[13px] font-bold tracking-[0.2em] text-muted">MusiConnect</p>
+      <h1 className="font-display text-[42px] leading-none text-accent">Musiconnect</h1>
       <p className="mt-5 text-[22px] font-bold leading-snug">
         共通の一曲が、
         <br />
@@ -41,11 +41,15 @@ export default function HomePage() {
         投票で決めよう。
       </p>
 
-      <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[15px] font-bold">
-        {SCENES.map(({ Icon, title }) => (
-          <li key={title} className="flex items-center gap-1.5">
-            <Icon size={18} className="text-accent" />
-            {title}
+      <p className="mt-8 text-[13px] text-muted">たとえば、こんなときに</p>
+      <ul className="mt-3 flex flex-col gap-4">
+        {SCENES.map(({ Icon, title, example }) => (
+          <li key={title} className="flex items-start gap-3">
+            <Icon size={26} className="mt-0.5 shrink-0 text-accent" />
+            <div>
+              <p className="text-[19px] font-bold leading-tight">{title}</p>
+              <p className="mt-1 text-[14px] text-muted">{example}</p>
+            </div>
           </li>
         ))}
       </ul>
