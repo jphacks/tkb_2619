@@ -91,7 +91,7 @@ function JoinRoom() {
       <AppHeader title="ルームに参加" backHref="/" />
       <main className="flex flex-1 flex-col px-4 pb-8">
         <section className="flex flex-col items-center rounded-2xl bg-surface px-5 pb-8 pt-10 text-center">
-          <span className="font-display text-[32px] leading-none text-accent">MusiConnect</span>
+          <span className="font-display text-[32px] leading-none text-accent">ミューコネ</span>
           <h2 className="mt-5 text-[22px] font-bold">みんなの選曲ルーム</h2>
           <p className="mt-1.5 text-[14px] text-muted">
             {snapshot.members.length > 0 ? `${snapshot.members.length}人が参加中 · ` : ""}参加方法を選んでください

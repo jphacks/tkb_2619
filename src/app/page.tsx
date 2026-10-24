@@ -28,11 +28,8 @@ export default function HomePage() {
 
   return (
     <main className="flex flex-1 flex-col px-6 pb-10 pt-16">
-      <h1 className="font-display text-[44px] leading-[1.05] text-accent">
-        Musi
-        <br />
-        Connect
-      </h1>
+      <h1 className="font-display text-[52px] leading-none text-accent">ミューコネ</h1>
+      <p className="mt-2 text-[13px] font-bold tracking-[0.2em] text-muted">MusiConnect</p>
       <p className="mt-5 text-[22px] font-bold leading-snug">
         共通の一曲が、
         <br />

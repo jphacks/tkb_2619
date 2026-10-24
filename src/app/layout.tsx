@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MusiConnect | 音楽で人と人を繋ぐ",
+  title: "ミューコネ（MusiConnect）| 音楽で人と人を繋ぐ",
   description: "カラオケ・パーティー・ドライブで、みんなが知っている曲・聴きたい曲を投票で選ぶ選曲ルーム",
 };
 
