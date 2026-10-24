@@ -1,6 +1,6 @@
 import {
   AGE_GROUPS,
-  GENDER_PREFS,
+  GENDERS,
   GENRES,
   NATIONALITIES,
   type CandidateEntry,
@@ -59,10 +59,46 @@ function buildProfile(candidates: CandidateEntry[]) {
   };
 }
 
+/** 条件1項目ぶんの評価。score は集団のうちどれだけをカバーできるか（0〜1） */
+interface ConditionCheck {
+  score: number;
+  label: string | null;
+}
+
+const labelsOf = <T extends string>(ids: T[], options: { id: T; label: string }[]) =>
+  ids.map((id) => options.find((o) => o.id === id)?.label ?? id).join("・");
+
+/** 集団の属性（複数選択）に対して、その曲がどれだけの人に届くか */
+function checkConditions(song: Song, c: Room["conditions"]): ConditionCheck[] {
+  const checks: ConditionCheck[] = [];
+
+  // ジャンル: 選んだどれかに当てはまればよい（1曲が複数ジャンルになることはないため）
+  if (c.genres.length > 0) {
+    checks.push({ score: c.genres.includes(song.genre) ? 1 : 0, label: genreLabel(song.genre) });
+  }
+  // 国籍・年代: 選んだ属性のうち、いくつでよく聴かれているか（全員に届く曲ほど高い）
+  if (c.nationalities.length > 0) {
+    const hit = c.nationalities.filter((n) => song.nationalityTags.includes(n));
+    checks.push({ score: hit.length / c.nationalities.length, label: hit.length ? `${labelsOf(hit, NATIONALITIES)}で人気` : null });
+  }
+  if (c.ageGroups.length > 0) {
+    const hit = c.ageGroups.filter((id) =>
+      AGE_GROUPS.find((a) => a.id === id)?.generations.some((g) => song.generationTags.includes(g))
+    );
+    checks.push({ score: hit.length / c.ageGroups.length, label: hit.length ? `${labelsOf(hit, AGE_GROUPS)}に届く` : null });
+  }
+  // 性別: 片方だけなら歌いやすいボーカルを優先、両方なら男女混合なのでどの曲でもよい
+  if (c.genders.length === 1) {
+    const ok = !song.vocal || song.vocal === "mixed" || song.vocal === c.genders[0];
+    checks.push({ score: ok ? 1 : 0, label: ok ? `${labelsOf(c.genders, GENDERS)}が歌いやすい` : null });
+  }
+  return checks;
+}
+
 /**
- * AIレコメンド（ルーム作成時の条件 × 参加者の好みの周辺）。
+ * AIレコメンド（集まる人たちの属性 × 参加者の好みの周辺）。
  * 議事録: 「調節機能を元に、参加者の好みの周辺にある楽曲を拾っていく」「OFFなら投稿とSpotifyデータのみ」
- * スコア = 条件の一致度² × 0.6 + 「その他」の雰囲気の一致 × 0.15 + 参加者の好みへの近さ × 0.25
+ * スコア = 属性のカバー率² × 0.6 + 「その他」の雰囲気の一致 × 0.15 + 参加者の好みへの近さ × 0.25
  */
 export function recommendForRoom(room: Room, candidates: CandidateEntry[], catalog: Song[], limit = 8): Recommendation[] {
   if (!room.aiEnabled) return [];
@@ -71,32 +107,14 @@ export function recommendForRoom(room: Room, candidates: CandidateEntry[], catal
   const profile = buildProfile(candidates);
   const wantedMoods = moodsFromText(c.other);
   const relatedArtists = new Set(profile.artists.slice(0, 10).flatMap((a) => RELATED_ARTISTS[a] ?? []));
-  const ageGenerations = AGE_GROUPS.find((a) => a.id === c.ageGroup)?.generations ?? [];
 
   const results: Recommendation[] = [];
   for (const song of catalog) {
     if (existing.has(normalizeKey(song))) continue;
 
-    const checks: { ok: boolean; label: string }[] = [];
-    if (c.genre !== "any") checks.push({ ok: song.genre === c.genre, label: genreLabel(c.genre) });
-    if (c.nationality !== "any")
-      checks.push({
-        ok: song.nationalityTags.includes(c.nationality),
-        label: `${NATIONALITIES.find((n) => n.id === c.nationality)?.label}で人気`,
-      });
-    if (c.ageGroup !== "any")
-      checks.push({
-        ok: song.generationTags.some((g) => ageGenerations.includes(g)),
-        label: `${AGE_GROUPS.find((a) => a.id === c.ageGroup)?.label}向け`,
-      });
-    if (c.gender !== "any")
-      checks.push({
-        ok: c.gender === "mixed" || song.vocal === c.gender,
-        label: `${GENDER_PREFS.find((g) => g.id === c.gender)?.label}が歌いやすい`,
-      });
-
-    const conditionScore = checks.length > 0 ? checks.filter((x) => x.ok).length / checks.length : 0.5;
-    // 選んだ条件の半分も満たさない曲は「該当しない」とみなす
+    const checks = checkConditions(song, c);
+    const conditionScore = checks.length > 0 ? checks.reduce((sum, x) => sum + x.score, 0) / checks.length : 0.5;
+    // 選んだ属性の半分も満たさない曲は「該当しない」とみなす
     if (checks.length > 0 && conditionScore < 0.5) continue;
 
     const matchedMoods = wantedMoods.filter((m) => song.moods?.includes(m));
@@ -106,7 +124,10 @@ export function recommendForRoom(room: Room, candidates: CandidateEntry[], catal
 
     // 選んだ条件を1つでも外すと大きく下がるよう二乗する（雰囲気が合うだけの曲が上位に来ないように）
     const score = 0.6 * conditionScore ** 2 + 0.15 * moodScore + 0.25 * proximity;
-    const reasonParts = checks.filter((x) => x.ok).map((x) => x.label);
+    const reasonParts = checks
+      .filter((x) => x.score > 0 && x.label)
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.label as string);
     if (matchedMoods.length > 0 && c.other.trim()) reasonParts.push(`「${c.other.trim().slice(0, 12)}」に合う`);
     if (isRelated) reasonParts.push("みんなの好きなアーティストに近い");
     results.push({ song, score, reason: reasonParts.slice(0, 2).join("・") || "みんなの好みに近い曲" });
@@ -129,10 +150,7 @@ export function recommendForMember(
   const existing = new Set(candidates.map((x) => normalizeKey(x.song)));
   const mine = candidates.filter((c) => c.memberId === memberId).sort((a, b) => b.weight - a.weight);
   if (mine.length === 0) {
-    return recommendForRoom({ ...room, aiEnabled: true }, candidates, catalog, limit).map((r) => ({
-      ...r,
-      reason: "このルームの条件から",
-    }));
+    return recommendForRoom({ ...room, aiEnabled: true }, candidates, catalog, limit);
   }
 
   const results: Recommendation[] = [];

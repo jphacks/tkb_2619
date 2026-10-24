@@ -15,7 +15,10 @@ export const RANKING_WEIGHTS = {
   aiOnly: 0.3,
   /** 持ち込まれた曲がAIの条件にも合う場合の加点 */
   aiBonus: 0.1,
-  /** パーティー: 定番曲ばかりにならないよう、人気が高すぎない曲を少し加点（議事録「曲のニッチ度合い」） */
+  /**
+   * 国籍が混ざった集団（議事録のパーティーの課題）: 全員に合わせると定番曲ばかりになるため、
+   * 人気が高すぎない曲を少し加点する（議事録「曲のニッチ度合い」）
+   */
   nicheBonus: 0.1,
   /** 最終ランキング = 候補ランキング 40% + スワイプ平均 60% */
   finalPre: 0.4,
@@ -107,7 +110,7 @@ export function buildCandidatePool(snapshot: RoomSnapshot, aiRecommendations: Re
       ? W.coverage * (item.memberIds.length / memberCount) + W.listening * Math.min(1, item.listening / memberCount)
       : W.aiOnly * (item.ai?.score ?? 0);
     if (brought && item.ai) score += W.aiBonus * item.ai.score;
-    if (snapshot.room.scene === "party" && item.song.popularity !== undefined) {
+    if (snapshot.room.conditions.nationalities.length >= 2 && item.song.popularity !== undefined) {
       score += W.nicheBonus * (1 - item.song.popularity / 100);
     }
     item.preScore = score;

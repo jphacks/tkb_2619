@@ -1,14 +1,5 @@
 // musicconnect のドメイン型
 
-/** 利用シーン（議事録: カラオケ×世代 / パーティー×国籍 / ドライブ×ジャンル） */
-export type Scene = "karaoke" | "party" | "drive";
-
-export const SCENES: { id: Scene; label: string; gap: string; otherPlaceholder: string }[] = [
-  { id: "karaoke", label: "カラオケ", gap: "世代のギャップ", otherPlaceholder: "みんなで歌える、明るい曲がいい" },
-  { id: "party", label: "パーティー", gap: "国籍のギャップ", otherPlaceholder: "盛り上がる曲。定番すぎない曲も入れたい" },
-  { id: "drive", label: "ドライブ", gap: "ジャンルのギャップ", otherPlaceholder: "夜のドライブで流せる、落ち着いた曲" },
-];
-
 export type Generation = "teens" | "20s" | "30s" | "40s" | "50s" | "60plus";
 
 export type Nationality = "JP" | "US" | "KR" | "CN" | "OTHER";
@@ -60,13 +51,15 @@ export const AGE_GROUPS: { id: AgeGroup; label: string; generations: Generation[
   { id: "60+", label: "60代以上", generations: ["60plus"] },
 ];
 
-/** ルーム作成画面の「性別」（歌う人に合うボーカルの曲を優先する） */
-export type GenderPref = "male" | "female" | "mixed";
+/** 曲のボーカル */
+export type Vocal = "male" | "female" | "mixed";
 
-export const GENDER_PREFS: { id: GenderPref; label: string }[] = [
+/** ルーム作成画面の「性別」（集団に含まれる性別。両方選ぶと男女混合） */
+export type Gender = "male" | "female";
+
+export const GENDERS: { id: Gender; label: string }[] = [
   { id: "male", label: "男性" },
   { id: "female", label: "女性" },
-  { id: "mixed", label: "男女混合" },
 ];
 
 /** 曲の雰囲気タグ（「その他」の自由入力と照合する） */
@@ -91,24 +84,28 @@ export interface Song {
   /** 人気度の目安（0〜100）。パーティーで「定番すぎない曲」を混ぜるのに使う */
   popularity?: number;
   moods?: Mood[];
-  vocal?: GenderPref;
+  vocal?: Vocal;
   /** MusicBrainzからジャンル・国を補完する必要があるか */
   metaStatus?: "pending" | "done";
   mbArtistId?: string;
 }
 
-/** AIレコメンドの条件（"any" は指定なし） */
+/**
+ * AIレコメンドの条件 = 集まった人たちの属性（複数選択。空なら指定なし）。
+ * 例: 年代に「20〜30代」「40〜50代」を選ぶと、両方の世代に届く曲ほど上位になる。
+ */
 export interface RoomConditions {
-  gender: GenderPref | "any";
-  genre: Genre | "any";
-  nationality: Nationality | "any";
-  ageGroup: AgeGroup | "any";
+  genders: Gender[];
+  genres: Genre[];
+  nationalities: Nationality[];
+  ageGroups: AgeGroup[];
   other: string;
 }
 
+export const EMPTY_CONDITIONS: RoomConditions = { genders: [], genres: [], nationalities: [], ageGroups: [], other: "" };
+
 export interface Room {
   id: string;
-  scene: Scene;
   aiEnabled: boolean;
   conditions: RoomConditions;
   hostMemberId: string | null;

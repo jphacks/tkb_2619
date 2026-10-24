@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { CandidateEntry, Member, Room, VoteEntry } from "@/types";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/config";
-import { generateMemberId, generateRoomId, type RoomBackend } from "./backend";
+import { generateMemberId, generateRoomId, parseConditions, type RoomBackend } from "./backend";
 
 /**
  * Supabase（Postgres + Realtime）を使った本番用バックエンド。
@@ -23,9 +23,8 @@ function check<T>({ data, error }: { data: T; error: { message: string } | null 
 
 interface RoomRow {
   id: string;
-  scene: Room["scene"];
   ai_enabled: boolean;
-  conditions: Room["conditions"];
+  conditions: unknown;
   host_member_id: string | null;
   final_song_id: string | null;
   created_at: string;
@@ -59,9 +58,8 @@ interface VoteRow {
 
 const toRoom = (r: RoomRow): Room => ({
   id: r.id,
-  scene: r.scene,
   aiEnabled: r.ai_enabled,
-  conditions: r.conditions,
+  conditions: parseConditions(r.conditions),
   hostMemberId: r.host_member_id,
   finalSongId: r.final_song_id,
   createdAt: r.created_at,
@@ -96,11 +94,11 @@ const toVote = (r: VoteRow): VoteEntry => ({
 export const supabaseBackend: RoomBackend = {
   kind: "supabase",
 
-  async createRoom({ scene, aiEnabled, conditions }) {
+  async createRoom({ aiEnabled, conditions }) {
     const row = check(
       await db()
         .from("rooms")
-        .insert({ id: generateRoomId(), scene, ai_enabled: aiEnabled, conditions })
+        .insert({ id: generateRoomId(), ai_enabled: aiEnabled, conditions })
         .select()
         .single()
     );

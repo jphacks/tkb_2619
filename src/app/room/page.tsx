@@ -10,7 +10,7 @@ import { roomBackend } from "@/lib/room";
 import { BASE_PATH } from "@/lib/config";
 import { addDemoMembers } from "@/lib/demo";
 import { myVoteFor } from "@/lib/logic/ranking";
-import { AGE_GROUPS, GENDER_PREFS, GENRES, NATIONALITIES, SCENES } from "@/types";
+import { AGE_GROUPS, GENDERS, GENRES, NATIONALITIES } from "@/types";
 
 const MENU = [
   { tab: "add", title: "手動で曲を選択", body: "検索・おすすめから候補を追加", Icon: Music, color: "bg-teal-soft text-teal" },
@@ -25,11 +25,13 @@ export default function RoomHubPage() {
   const { room, members } = snapshot;
   const c = room.conditions;
 
+  const labels = <T extends string>(ids: T[], options: { id: T; label: string }[]) =>
+    ids.map((id) => options.find((o) => o.id === id)?.label).filter(Boolean).join("・");
   const conditionText = [
-    c.genre !== "any" && GENRES.find((g) => g.id === c.genre)?.label,
-    c.nationality !== "any" && NATIONALITIES.find((n) => n.id === c.nationality)?.label,
-    c.ageGroup !== "any" && AGE_GROUPS.find((a) => a.id === c.ageGroup)?.label,
-    c.gender !== "any" && GENDER_PREFS.find((g) => g.id === c.gender)?.label,
+    labels(c.genres, GENRES),
+    labels(c.nationalities, NATIONALITIES),
+    labels(c.ageGroups, AGE_GROUPS),
+    labels(c.genders, GENDERS),
     c.other.trim() && `「${c.other.trim()}」`,
   ]
     .filter(Boolean)
@@ -87,19 +89,16 @@ export default function RoomHubPage() {
 
         <section className="mt-2 rounded-2xl bg-white p-4 text-[13px] shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-muted">
-              {SCENES.find((s) => s.id === room.scene)?.label} ·{" "}
-              <span className="inline-flex items-center gap-0.5">
-                <Sparkles size={12} />
-                AIレコメンド{room.aiEnabled ? "ON" : "OFF"}
-              </span>
+            <span className="inline-flex items-center gap-0.5 text-muted">
+              <Sparkles size={12} />
+              AIレコメンド{room.aiEnabled ? "ON" : "OFF"}
             </span>
             <button type="button" onClick={copyInvite} className="flex items-center gap-1 font-bold text-teal">
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? "コピーしました" : "招待URLをコピー"}
             </button>
           </div>
-          {room.aiEnabled && conditionText && <p className="mt-1.5 text-[12px] text-muted">条件: {conditionText}</p>}
+          {room.aiEnabled && conditionText && <p className="mt-1.5 text-[12px] text-muted">集まる人: {conditionText}</p>}
           <p className="mt-1.5 text-[12px] text-muted">
             参加者: {members.map((m) => (m.id === me.id ? `${m.name}（あなた）` : m.name)).join("、")}
           </p>

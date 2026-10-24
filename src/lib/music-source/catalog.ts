@@ -1,4 +1,4 @@
-import type { GenderPref, Genre, Mood, Nationality, Song } from "@/types";
+import type { Genre, Mood, Nationality, Song, Vocal } from "@/types";
 import { colorsForId, generationsForYear } from "./normalize";
 
 /**
@@ -16,7 +16,7 @@ type Entry = [
   nationalityTags: Nationality[],
   popularity: number,
   moods: Mood[],
-  vocal?: GenderPref,
+  vocal?: Vocal,
 ];
 
 const ENTRIES: Entry[] = [

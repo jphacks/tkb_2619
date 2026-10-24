@@ -8,7 +8,6 @@
 
 create table if not exists rooms (
   id text primary key,
-  scene text not null check (scene in ('karaoke', 'party', 'drive')),
   ai_enabled boolean not null default true,
   conditions jsonb not null default '{}'::jsonb,
   host_member_id text,

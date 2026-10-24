@@ -1,9 +1,31 @@
-import type { CandidateEntry, Member, Room, RoomConditions, RoomSnapshot, Scene, Song, VoteScore } from "@/types";
+import { EMPTY_CONDITIONS } from "@/types";
+import type { CandidateEntry, Member, Room, RoomConditions, RoomSnapshot, Song, VoteScore } from "@/types";
 
 export interface NewRoomInput {
-  scene: Scene;
   aiEnabled: boolean;
   conditions: RoomConditions;
+}
+
+/**
+ * 保存されている条件を読み込む。以前のバージョンは単一選択（例: genre: "jpop", 未指定は "any"）で
+ * 保存していたため、その形式も複数選択の形に変換する。
+ */
+export function parseConditions(raw: unknown): RoomConditions {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const list = <T,>(plural: string, singular: string): T[] => {
+    const value = r[plural] ?? r[singular];
+    if (Array.isArray(value)) return value as T[];
+    if (typeof value === "string" && value !== "any") return value === "mixed" ? (["male", "female"] as T[]) : [value as T];
+    return [];
+  };
+  return {
+    ...EMPTY_CONDITIONS,
+    genders: list("genders", "gender"),
+    genres: list("genres", "genre"),
+    nationalities: list("nationalities", "nationality"),
+    ageGroups: list("ageGroups", "ageGroup"),
+    other: typeof r.other === "string" ? r.other : "",
+  };
 }
 
 export type NewCandidate = Omit<CandidateEntry, "addedAt">;

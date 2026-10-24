@@ -2,72 +2,61 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, ChevronRight, Copy } from "lucide-react";
+import { Check, ChevronRight, Copy } from "lucide-react";
 import { AppHeader, primaryButton } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
 import { saveIdentity } from "@/lib/room/identity";
 import { BASE_PATH } from "@/lib/config";
-import {
-  AGE_GROUPS,
-  GENDER_PREFS,
-  GENRES,
-  NATIONALITIES,
-  SCENES,
-  type Room,
-  type RoomConditions,
-  type Scene,
-} from "@/types";
+import { AGE_GROUPS, EMPTY_CONDITIONS, GENDERS, GENRES, NATIONALITIES, type Room, type RoomConditions } from "@/types";
 
-function SelectRow<T extends string>({
+/** 集団の属性を選ぶ行（複数選択。何も選ばなければ指定なし） */
+function ChipRow<T extends string>({
   label,
-  value,
+  selected,
   options,
   onChange,
-  hint,
 }: {
   label: string;
-  value: T;
+  selected: T[];
   options: { id: T; label: string }[];
-  onChange: (value: T) => void;
-  hint?: string;
+  onChange: (next: T[]) => void;
 }) {
+  const toggle = (id: T) => onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
   return (
-    <div className="border-t border-line py-3.5">
-      <label className="grid grid-cols-[84px_1fr] items-center gap-3">
-        <span className="text-[16px] font-bold">{label}</span>
-        <span className="relative">
-          <select
-            value={value}
-            onChange={(e) => onChange(e.target.value as T)}
-            className="w-full appearance-none rounded-xl border border-line bg-white py-3 pl-4 pr-10 text-[16px] outline-none focus:border-teal"
-          >
-            {options.map((o) => (
-              <option key={o.id} value={o.id}>
+    <div className="grid grid-cols-[72px_1fr] gap-3 border-t border-line py-3.5">
+      <span className="pt-1.5 text-[16px] font-bold">{label}</span>
+      <div>
+        <div className="flex flex-wrap gap-1.5">
+          {options.map((o) => {
+            const on = selected.includes(o.id);
+            return (
+              <button
+                key={o.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() => toggle(o.id)}
+                className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-[14px] transition ${
+                  on ? "border-teal bg-teal font-bold text-white" : "border-line bg-white text-ink"
+                }`}
+              >
+                {on && <Check size={13} strokeWidth={3} />}
                 {o.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={20} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
-        </span>
-      </label>
-      {hint && <p className="mt-1.5 pl-[96px] text-[11px] text-muted">{hint}</p>}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-1.5 text-[11px] text-muted">
+          {selected.length === 0 ? "指定なし（複数選択できます）" : `${selected.length}つ選択中`}
+        </p>
+      </div>
     </div>
   );
 }
 
-const ANY = { id: "any" as const, label: "指定なし" };
-
 export default function CreateRoomPage() {
   const router = useRouter();
-  const [scene, setScene] = useState<Scene>("karaoke");
   const [aiEnabled, setAiEnabled] = useState(true);
-  const [conditions, setConditions] = useState<RoomConditions>({
-    gender: "any",
-    genre: "any",
-    nationality: "any",
-    ageGroup: "any",
-    other: "",
-  });
+  const [conditions, setConditions] = useState<RoomConditions>(EMPTY_CONDITIONS);
   const [room, setRoom] = useState<Room | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,13 +66,12 @@ export default function CreateRoomPage() {
     setConditions((c) => ({ ...c, [key]: value }));
 
   const inviteUrl = room ? `${window.location.origin}${BASE_PATH}/join?room=${room.id}` : "";
-  const sceneInfo = SCENES.find((s) => s.id === scene)!;
 
   const handleCreate = async () => {
     setCreating(true);
     setError(null);
     try {
-      const created = await roomBackend.createRoom({ scene, aiEnabled, conditions });
+      const created = await roomBackend.createRoom({ aiEnabled, conditions });
       saveIdentity(created.id, { isHost: true });
       setRoom(created);
     } catch {
@@ -104,27 +92,7 @@ export default function CreateRoomPage() {
       <AppHeader title="ルームを作成" backHref="/" />
       <main className="flex flex-1 flex-col gap-4 px-4 pb-8">
         <section className="rounded-2xl bg-white px-4 pb-1 pt-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
-          <div className="pb-3.5">
-            <p className="text-[16px] font-bold">シーン</p>
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              {SCENES.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setScene(s.id)}
-                  disabled={Boolean(room)}
-                  className={`rounded-xl border px-2 py-2.5 text-center transition ${
-                    s.id === scene ? "border-teal bg-teal-soft" : "border-line bg-white"
-                  }`}
-                >
-                  <span className="block text-[14px] font-bold">{s.label}</span>
-                  <span className="block text-[10px] text-muted">{s.gap}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between border-t border-line pt-4">
+          <div className="flex items-center justify-between">
             <span className="text-[18px] font-bold">AIレコメンド</span>
             <div className="grid grid-cols-2 rounded-xl border border-line bg-app p-1">
               {[false, true].map((on) => (
@@ -146,22 +114,29 @@ export default function CreateRoomPage() {
 
           {aiEnabled && (
             <fieldset disabled={Boolean(room)}>
-              <SelectRow label="性別" value={conditions.gender} options={[ANY, ...GENDER_PREFS]} onChange={(v) => set("gender", v)} />
-              <SelectRow label="ジャンル" value={conditions.genre} options={[ANY, ...GENRES.filter((g) => g.id !== "other")]} onChange={(v) => set("genre", v)} />
-              <SelectRow label="国籍" value={conditions.nationality} options={[ANY, ...NATIONALITIES]} onChange={(v) => set("nationality", v)} />
-              <SelectRow
-                label="年代"
-                value={conditions.ageGroup}
-                options={[ANY, ...AGE_GROUPS]}
-                onChange={(v) => set("ageGroup", v)}
-                hint={AGE_GROUPS.map((a) => a.label).join(" / ")}
+              <p className="border-t border-line pb-1 pt-3 text-[12px] leading-relaxed text-muted">
+                集まる人たちの属性を選んでください。複数選ぶと、みんなに届く曲が優先されます。
+              </p>
+              <ChipRow label="性別" selected={conditions.genders} options={GENDERS} onChange={(v) => set("genders", v)} />
+              <ChipRow
+                label="ジャンル"
+                selected={conditions.genres}
+                options={GENRES.filter((g) => g.id !== "other")}
+                onChange={(v) => set("genres", v)}
               />
-              <div className="grid grid-cols-[84px_1fr] gap-3 border-t border-line py-3.5">
+              <ChipRow
+                label="国籍"
+                selected={conditions.nationalities}
+                options={NATIONALITIES}
+                onChange={(v) => set("nationalities", v)}
+              />
+              <ChipRow label="年代" selected={conditions.ageGroups} options={AGE_GROUPS} onChange={(v) => set("ageGroups", v)} />
+              <div className="grid grid-cols-[72px_1fr] gap-3 border-t border-line py-3.5">
                 <span className="pt-3 text-[16px] font-bold">その他</span>
                 <textarea
                   value={conditions.other}
                   onChange={(e) => set("other", e.target.value)}
-                  placeholder={sceneInfo.otherPlaceholder}
+                  placeholder="みんなで歌える、明るい曲がいい"
                   rows={3}
                   className="w-full resize-none rounded-xl border border-line bg-white px-3.5 py-3 text-[15px] outline-none placeholder:text-muted/60 focus:border-teal"
                 />

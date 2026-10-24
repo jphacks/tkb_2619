@@ -1,5 +1,5 @@
 import type { RoomSnapshot } from "@/types";
-import { generateMemberId, generateRoomId, type RoomBackend } from "./backend";
+import { generateMemberId, generateRoomId, parseConditions, type RoomBackend } from "./backend";
 
 /**
  * Supabase未設定時のデモ用バックエンド。
@@ -30,7 +30,9 @@ function notify(roomId: string) {
 
 function load(roomId: string): RoomSnapshot | null {
   const raw = localStorage.getItem(keyFor(roomId));
-  return raw ? (JSON.parse(raw) as RoomSnapshot) : null;
+  if (!raw) return null;
+  const snapshot = JSON.parse(raw) as RoomSnapshot;
+  return { ...snapshot, room: { ...snapshot.room, conditions: parseConditions(snapshot.room.conditions) } };
 }
 
 function update(roomId: string, mutate: (snapshot: RoomSnapshot) => void) {
