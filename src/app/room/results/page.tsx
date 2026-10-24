@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Check, ExternalLink, Play } from "lucide-react";
 import { AppHeader, TabBar } from "@/components/ui";
 import { useRoom } from "@/components/RoomProvider";
@@ -9,7 +9,7 @@ import SongArtwork from "@/components/SongArtwork";
 import { roomBackend } from "@/lib/room";
 import { spotifyOpenUrl } from "@/lib/music-source/spotify";
 
-const SHOWN = 10;
+const SHOWN = 20;
 
 function useNow(intervalMs: number) {
   const [now, setNow] = useState(() => Date.now());
@@ -85,72 +85,82 @@ export default function ResultsPage() {
           <p className="py-16 text-center text-[14px] text-muted">まだ候補がありません</p>
         ) : (
           <ol className="flex flex-col gap-2">
-            {ranking.slice(0, SHOWN).map((item, i) => {
+            {ranking.slice(0, SHOWN).map((item, i, shown) => {
               const delta = rankState.deltas.get(item.key);
-              const top = i < 3;
+              const voted = item.voteCount > 0;
+              const top = i < 3 && voted;
               const open = selected === item.key;
               const isFinal = finalId !== null && (item.song.id === finalId || item.songIds.includes(finalId));
+              const firstUnvoted = !voted && (i === 0 || shown[i - 1].voteCount > 0);
               return (
-                <li
-                  key={item.key}
-                  className={`rounded-2xl border transition ${top ? "border-accent/15 bg-accent-soft/70" : "border-line bg-surface"}`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setSelected(open ? null : item.key)}
-                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
-                  >
-                    <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[15px] font-bold ${
-                        top ? "bg-accent text-on-accent" : "bg-no-soft text-ink"
-                      }`}
-                    >
-                      {i + 1}
-                    </span>
-                    <SongArtwork song={item.song} className="h-12 w-12 rounded-lg" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px] font-bold">{item.song.title}</span>
-                      <span className="block truncate text-[12px] text-muted">{item.song.artist}</span>
-                    </span>
-                    {delta !== undefined && (
-                      <span className={`flex shrink-0 items-center text-[13px] font-bold ${delta > 0 ? "text-best" : "text-muted"}`}>
-                        {delta > 0 ? <ArrowUp size={15} /> : <ArrowDown size={15} />}
-                        {Math.abs(delta)}
-                      </span>
-                    )}
-                    <span className={`w-[64px] shrink-0 text-right font-bold ${top ? "text-accent" : ""}`}>
-                      <span className="text-[22px]">{item.pt}</span>
-                      <span className="text-[12px]">pt</span>
-                    </span>
-                  </button>
-                  {open && (
-                    <div className="flex flex-wrap items-center gap-2 border-t border-black/5 px-3 py-2.5 text-[12px]">
-                      <span className="mr-auto text-muted">
-                        {sourceLabel(item)}
-                        {item.voteAverage !== null && ` · 平均${item.voteAverage.toFixed(1)}点（${item.voteCount}票）`}
-                      </span>
-                      <a
-                        href={spotifyOpenUrl(item.song)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-1 rounded-lg border border-line bg-surface px-2.5 py-1.5 font-bold"
-                      >
-                        <ExternalLink size={13} />
-                        Spotify
-                      </a>
-                      {isHost && (
-                        <button
-                          type="button"
-                          onClick={() => roomBackend.setFinalSong(roomId, isFinal ? null : item.song.id)}
-                          className="flex items-center gap-1 rounded-lg bg-accent px-2.5 py-1.5 font-bold text-on-accent"
-                        >
-                          {isFinal ? <Check size={13} /> : <Play size={13} fill="currentColor" />}
-                          {isFinal ? "選択中（解除）" : "この曲を流す"}
-                        </button>
-                      )}
-                    </div>
+                <Fragment key={item.key}>
+                  {firstUnvoted && (
+                    <li className="mt-3 px-1 text-[12px] text-muted">まだ誰も投票していない曲（候補の順）</li>
                   )}
-                </li>
+                  <li
+                    className={`rounded-2xl border transition ${top ? "border-accent/15 bg-accent-soft/70" : "border-line bg-surface"}`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setSelected(open ? null : item.key)}
+                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
+                    >
+                      <span
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[15px] font-bold ${
+                          top ? "bg-accent text-on-accent" : "bg-no-soft text-ink"
+                        }`}
+                      >
+                        {i + 1}
+                      </span>
+                      <SongArtwork song={item.song} className="h-12 w-12 rounded-lg" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[15px] font-bold">{item.song.title}</span>
+                        <span className="block truncate text-[12px] text-muted">{item.song.artist}</span>
+                      </span>
+                      {delta !== undefined && (
+                        <span className={`flex shrink-0 items-center text-[13px] font-bold ${delta > 0 ? "text-best" : "text-muted"}`}>
+                          {delta > 0 ? <ArrowUp size={15} /> : <ArrowDown size={15} />}
+                          {Math.abs(delta)}
+                        </span>
+                      )}
+                      {voted ? (
+                        <span className={`w-[64px] shrink-0 text-right font-bold ${top ? "text-accent" : ""}`}>
+                          <span className="text-[22px]">{item.pt}</span>
+                          <span className="text-[12px]">pt</span>
+                        </span>
+                      ) : (
+                        <span className="w-[64px] shrink-0 text-right text-[12px] font-bold text-muted">未投票</span>
+                      )}
+                    </button>
+                    {open && (
+                      <div className="flex flex-wrap items-center gap-2 border-t border-black/5 px-3 py-2.5 text-[12px]">
+                        <span className="mr-auto text-muted">
+                          {sourceLabel(item)}
+                          {item.voteAverage !== null && ` · 平均${item.voteAverage.toFixed(1)}点（${item.voteCount}票）`}
+                        </span>
+                        <a
+                          href={spotifyOpenUrl(item.song)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 rounded-lg border border-line bg-surface px-2.5 py-1.5 font-bold"
+                        >
+                          <ExternalLink size={13} />
+                          Spotify
+                        </a>
+                        {isHost && (
+                          <button
+                            type="button"
+                            onClick={() => roomBackend.setFinalSong(roomId, isFinal ? null : item.song.id)}
+                            className="flex items-center gap-1 rounded-lg bg-accent px-2.5 py-1.5 font-bold text-on-accent"
+                          >
+                            {isFinal ? <Check size={13} /> : <Play size={13} fill="currentColor" />}
+                            {isFinal ? "選択中（解除）" : "この曲を流す"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                </Fragment>
               );
             })}
           </ol>
@@ -158,7 +168,7 @@ export default function ResultsPage() {
 
         <p className="text-center text-[12px] text-muted">投票の追加・変更にあわせて順位が変わります</p>
         <p className="text-center text-[11px] text-muted/80">
-          pt = 候補ランキング（被った人数・よく聴く度合い・AI）40% ＋ スワイプ平均 60%
+          pt = 候補ランキング（被った人数・よく聴く度合い・AI）40% ＋ スワイプ平均 60%。未投票の曲は下に並びます
           {isHost && " ／ 曲をタップして「この曲を流す」で決定"}
         </p>
       </main>
