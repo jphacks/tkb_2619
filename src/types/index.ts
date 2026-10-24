@@ -116,7 +116,7 @@ export const GENDERS: { id: Gender; label: string }[] = [
 /** 曲の雰囲気タグ（「その他」の自由入力と照合する） */
 export type Mood = "upbeat" | "singalong" | "romantic" | "chill" | "emotional" | "nostalgic" | "summer";
 
-export type SongOrigin = "catalog" | "spotify" | "musicbrainz";
+export type SongOrigin = "catalog" | "spotify" | "musicbrainz" | "itunes";
 
 /** 楽曲（Spotify / MusicBrainz / カタログの違いを吸収した形） */
 export interface Song {

@@ -128,7 +128,8 @@ export default function RoomProvider({ children }: { children: React.ReactNode }
 
   const view = useMemo<RoomView | null>(() => {
     if (!snapshot || !me || !roomId || state?.status !== "ready") return null;
-    const aiRecommendations = recommendForRoom(snapshot.room, snapshot.candidates, CATALOG);
+    // 投票は件数で区切らないので、条件に合う曲はすべて候補に入れる（並びは合う順）
+    const aiRecommendations = recommendForRoom(snapshot.room, snapshot.candidates, CATALOG, CATALOG.length);
     const pool = buildCandidatePool(snapshot, aiRecommendations);
     return {
       roomId,

@@ -25,9 +25,6 @@ export const RANKING_WEIGHTS = {
   finalVote: 0.6,
 };
 
-/** スワイプ投票に回す曲数（議事録「投稿までのランキング上位からスワイプ」） */
-export const VOTE_DECK_SIZE = 10;
-
 export interface PoolItem {
   key: string;
   song: Song;
@@ -119,8 +116,12 @@ export function buildCandidatePool(snapshot: RoomSnapshot, aiRecommendations: Re
   return items.sort((a, b) => b.preScore - a.preScore || b.memberIds.length - a.memberIds.length);
 }
 
+/**
+ * スワイプ投票に回す曲。候補は件数を絞らず全部、候補ランキングの上位から順に出す
+ * （途中で投票が途切れないように。議事録「投稿までのランキング上位からスワイプ」）
+ */
 export function voteDeck(pool: PoolItem[]): PoolItem[] {
-  return pool.slice(0, VOTE_DECK_SIZE);
+  return pool;
 }
 
 /** 投票は代表曲のIDに付くが、同じ曲の別IDへの投票もまとめて数える */

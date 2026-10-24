@@ -1,4 +1,5 @@
 import { CATALOG } from "./catalog";
+import { searchItunes } from "./itunes";
 import { searchRecordings } from "./musicbrainz";
 import { canonicalArtist, normalizeKey } from "./normalize";
 import type { MusicSourceAdapter } from "./types";
@@ -15,17 +16,20 @@ function searchCatalog(query: string) {
 /**
  * アプリが使う公開楽曲データ源。
  * - カタログ: キュレーション済みの曲（AIレコメンドの母集団）
- * - 検索: カタログ内の一致を先に、続けて MusicBrainz の結果（失敗してもカタログ結果は返す）
+ * - 検索: カタログ内の一致を先に、続けて iTunes の結果（人気順）。
+ *   iTunes が使えないときだけ MusicBrainz に切り替える（失敗してもカタログ結果は返す）
  */
 export const musicSource: MusicSourceAdapter = {
   getCatalog: () => CATALOG,
   async searchSongs(query, knownArtists = new Set()) {
     const local = searchCatalog(query);
     const artists = new Set([...knownArtists, ...CATALOG.map((s) => s.artist)]);
-    const remote = await searchRecordings(query, artists).catch((error) => {
-      if (local.length === 0) throw error;
-      return [];
-    });
+    const remote = await searchItunes(query)
+      .catch(() => searchRecordings(query, artists))
+      .catch((error) => {
+        if (local.length === 0) throw error;
+        return [];
+      });
     const seen = new Set(local.map(normalizeKey));
     return [...local, ...remote.filter((s) => !seen.has(normalizeKey(s)))];
   },

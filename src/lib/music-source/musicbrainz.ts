@@ -70,9 +70,9 @@ function escapeLucene(text: string): string {
 const coverUrl = (releaseId: string) => `https://coverartarchive.org/release/${releaseId}/front-250`;
 
 /** ライブ・リミックス・映像・カラオケ版などの別収録を除外する */
-const NOISE = /(live|tour|映像|ノンクレジット|music video|remix|instrumental|off vocal|karaoke|カラオケ|acoustic|ver\.|version|demo|tv size|inst\.)/i;
+export const NOISE = /(live|tour|映像|ノンクレジット|music video|remix|instrumental|off vocal|karaoke|カラオケ|acoustic|ver\.|version|demo|tv size|inst\.)/i;
 /** カバー・BGMアレンジ専門のアーティストを除外する */
-const COVER_ARTIST = /(8-bit|arcade|tribute|cover|オルゴール|music box|piano|lullaby|karaoke|カラオケ)/i;
+export const COVER_ARTIST = /(8-bit|arcade|tribute|cover|オルゴール|music box|piano|lullaby|karaoke|カラオケ)/i;
 
 interface MbTag {
   name: string;
