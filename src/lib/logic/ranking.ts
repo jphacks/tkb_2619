@@ -146,5 +146,6 @@ export function rankWithVotes(pool: PoolItem[], votes: VoteEntry[]): RankedItem[
       const pt = voteAverage === null ? W.finalPre * pre : W.finalPre * pre + W.finalVote * (voteAverage / 3);
       return { ...item, voteCount: scored.length, voteAverage, pt: Math.round(pt * 100) };
     })
-    .sort((a, b) => b.pt - a.pt || b.preScore - a.preScore);
+    // 投票が1票でもある曲を上に。未投票の曲は候補としての強さだけで点が付き、投票結果に見えてしまうため下に回す
+    .sort((a, b) => Number(b.voteCount > 0) - Number(a.voteCount > 0) || b.pt - a.pt || b.preScore - a.preScore);
 }
