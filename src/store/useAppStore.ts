@@ -2,10 +2,20 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CandidateSong, Participant, Scene, Song, Vote } from "@/types";
 
+/** Spotifyから取り込んだ直後で、属性（世代・国籍・好きなジャンル）の入力待ちの参加者 */
+export interface PendingSpotifyImport {
+  spotifyUserId: string;
+  displayName: string;
+  songIds: string[];
+}
+
 interface AppState {
   scene: Scene | null;
   participants: Participant[];
+  /** Spotifyから取り込んだ曲（参加者の knownSongIds から参照される） */
+  importedSongs: Song[];
   submittedSongs: Song[];
+  pendingImport: PendingSpotifyImport | null;
   candidates: CandidateSong[];
   votes: Vote[];
   currentVoterId: string | null;
@@ -15,8 +25,13 @@ interface AppState {
   setHasHydrated: (hydrated: boolean) => void;
   setScene: (scene: Scene) => void;
   toggleParticipant: (participant: Participant) => void;
-  setParticipants: (participants: Participant[]) => void;
+  upsertParticipant: (participant: Participant) => void;
+  removeParticipant: (id: string) => void;
+  setPendingImport: (pending: PendingSpotifyImport, songs: Song[]) => void;
+  clearPendingImport: () => void;
   addSubmittedSong: (song: Song) => void;
+  /** MusicBrainzで補完した曲情報を反映する */
+  updateSong: (song: Song) => void;
   setCandidates: (candidates: CandidateSong[]) => void;
   setCurrentVoterId: (id: string | null) => void;
   castVote: (vote: Vote) => void;
@@ -24,12 +39,25 @@ interface AppState {
   resetAll: () => void;
 }
 
+function mergeById(existing: Song[], incoming: Song[]): Song[] {
+  const ids = new Set(existing.map((s) => s.id));
+  return [...existing, ...incoming.filter((s) => !ids.has(s.id))];
+}
+
+/** どの参加者からも・入力待ちの取り込みからも参照されなくなった取り込み曲を捨てる */
+function pruneImportedSongs(songs: Song[], participants: Participant[], pending: PendingSpotifyImport | null) {
+  const used = new Set([...participants.flatMap((p) => p.knownSongIds), ...(pending?.songIds ?? [])]);
+  return songs.filter((s) => used.has(s.id));
+}
+
 export const useAppStore = create<AppState>()(
   persist(
     (set, get) => ({
       scene: null,
       participants: [],
+      importedSongs: [],
       submittedSongs: [],
+      pendingImport: null,
       candidates: [],
       votes: [],
       currentVoterId: null,
@@ -48,9 +76,36 @@ export const useAppStore = create<AppState>()(
         });
       },
 
-      setParticipants: (participants) => set({ participants }),
+      upsertParticipant: (participant) => {
+        const others = get().participants.filter((p) => p.id !== participant.id);
+        const participants = [...others, participant];
+        set({ participants, importedSongs: pruneImportedSongs(get().importedSongs, participants, get().pendingImport) });
+      },
 
-      addSubmittedSong: (song) => set({ submittedSongs: [...get().submittedSongs, song] }),
+      removeParticipant: (id) => {
+        const participants = get().participants.filter((p) => p.id !== id);
+        set({
+          participants,
+          votes: get().votes.filter((v) => v.participantId !== id),
+          importedSongs: pruneImportedSongs(get().importedSongs, participants, get().pendingImport),
+        });
+      },
+
+      setPendingImport: (pending, songs) =>
+        set({ pendingImport: pending, importedSongs: mergeById(get().importedSongs, songs) }),
+
+      clearPendingImport: () =>
+        set({
+          pendingImport: null,
+          importedSongs: pruneImportedSongs(get().importedSongs, get().participants, null),
+        }),
+
+      addSubmittedSong: (song) => set({ submittedSongs: mergeById(get().submittedSongs, [song]) }),
+
+      updateSong: (song) => {
+        const replace = (list: Song[]) => list.map((s) => (s.id === song.id ? song : s));
+        set({ importedSongs: replace(get().importedSongs), submittedSongs: replace(get().submittedSongs) });
+      },
 
       setCandidates: (candidates) => set({ candidates }),
 
@@ -69,7 +124,9 @@ export const useAppStore = create<AppState>()(
         set({
           scene: null,
           participants: [],
+          importedSongs: [],
           submittedSongs: [],
+          pendingImport: null,
           candidates: [],
           votes: [],
           currentVoterId: null,

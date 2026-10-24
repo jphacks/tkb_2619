@@ -43,7 +43,9 @@ export type Genre =
   | "anime"
   | "citypop"
   | "enka"
-  | "classical";
+  | "classical"
+  | "pop"
+  | "other";
 
 export const GENRES: { id: Genre; label: string }[] = [
   { id: "jpop", label: "J-POP" },
@@ -56,9 +58,14 @@ export const GENRES: { id: Genre; label: string }[] = [
   { id: "citypop", label: "シティポップ" },
   { id: "enka", label: "演歌" },
   { id: "classical", label: "クラシック" },
+  { id: "pop", label: "ポップ" },
+  { id: "other", label: "その他" },
 ];
 
-/** 楽曲データ（将来 Spotify / MusicBrainz 等の外部APIに差し替え可能なように正規化） */
+/** 楽曲データの出どころ */
+export type SongOrigin = "mock" | "spotify" | "musicbrainz";
+
+/** 楽曲データ（Spotify / MusicBrainz / モックの違いを吸収した正規化済みの形） */
 export interface Song {
   id: string;
   title: string;
@@ -72,6 +79,11 @@ export interface Song {
   /** モック用のジャケット代わりの色（将来 albumArtUrl に置き換え） */
   colorFrom: string;
   colorTo: string;
+  origin?: SongOrigin;
+  /** MusicBrainzからジャンル・国の補完が必要か（"pending" の曲はバックグラウンドで補完される） */
+  metaStatus?: "pending" | "done";
+  /** MusicBrainzのアーティストID（分かっていれば補完時の検索精度が上がる） */
+  mbArtistId?: string;
 }
 
 /** 参加者（モックではプリセットの人物から選択する） */
@@ -84,6 +96,7 @@ export interface Participant {
   favoriteGenres: Genre[];
   /** この参加者が「知っている/よく聴く」曲のID一覧 */
   knownSongIds: string[];
+  origin?: "mock" | "spotify";
 }
 
 /** スワイプ方向 */

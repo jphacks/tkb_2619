@@ -40,9 +40,8 @@ Music Bridge は、参加者の「知ってる曲・よく聴く曲」や世代�
 - 投票を通じてその場にいる全員の好みを可視化できる
 
 ### 今後の展望
-- Spotify Web API 連携による実際の再生履歴・プレイリストからの「知ってる曲」自動抽出
-- MusicBrainz API 等への差し替えによるパブリック楽曲データの拡充
-- 曲の重複判定をジャンル／アーティスト単位の緩い一致に拡張
+- 曲の重複判定を表記揺れ（Idol / アイドル、Kenshi Yonezu / 米津玄師）やジャンル／アーティスト単位の緩い一致に拡張（MusicBrainzの別名データを活用）
+- 属性レコメンドの母集団をチャート等の人気度データで拡充（現在はキュレーション済みカタログ）
 - 実際の音源再生・Spotifyでのプレイリスト自動生成
 
 ### 注力したこと（こだわり等）
@@ -61,15 +60,28 @@ npm install
 npm run dev
 ```
 
-`http://localhost:3000` を開くとシーン選択画面から始まります。
+`http://127.0.0.1:3000` を開くとシーン選択画面から始まります（Spotifyログインは `localhost` では使えないため、`127.0.0.1` で開いてください）。
 
-Spotify連携等で環境変数が必要になった場合は `.env.local` に追加してください（`.gitignore` 済み）。
+### 外部API連携
+| 用途 | API | 認証 |
+| --- | --- | --- |
+| 参加者の「知ってる曲」（よく聴く曲・お気に入り曲） | Spotify Web API | 参加者ごとにSpotifyログイン（PKCE。Client Secret不要） |
+| 曲の検索（投稿曲）、ジャンル・アーティストの国の補完 | MusicBrainz API | 不要 |
+
+**Spotifyの設定（[ダッシュボード](https://developer.spotify.com/dashboard)）**
+- Redirect URIs に次の2つを登録
+  - `https://jphacks.github.io/tkb_2619/callback`（公開サイト）
+  - `http://127.0.0.1:3000/callback`（ローカル開発）
+- 開発モードのアプリは **User Management に登録したアカウントだけ** ログインできます。デモで使う人のSpotifyアカウントを登録してください。
+- Client ID はPKCE方式では公開されて問題ない値のため、コードに既定値として入っています（別のアプリを使う場合は `.env.local` の `NEXT_PUBLIC_SPOTIFY_CLIENT_ID` で上書き）。**Client Secret はこのアプリでは使わないので、コードや `.env` に置かないでください。**
+- Codespaces のURLはRedirect URIに登録していないため、CodespacesではSpotifyログインは使えません（MusicBrainz検索は使えます）。
 
 ## 開発技術
 ### 活用した技術
 #### API・データ
-* モック楽曲データ（`src/lib/music-source/mock.ts`）
-* 将来差し替え予定: Spotify Web API / MusicBrainz API（`src/lib/music-source/spotify.ts`, `musicbrainz.ts` に設計メモを記載）
+* Spotify Web API（`src/lib/music-source/spotify.ts`）: Authorization Code with PKCE でブラウザだけで認可し、トップトラック・お気に入り曲を取り込み。アクセストークンは保存しない
+* MusicBrainz API（`src/lib/music-source/musicbrainz.ts`）: 曲検索とアーティストの国・ジャンルタグ取得（1リクエスト/秒に直列化、結果はブラウザにキャッシュ）
+* キュレーション済み楽曲カタログ（`src/lib/music-source/mock.ts`）: 属性レコメンドの母集団
 
 #### フレームワーク・ライブラリ・モジュール
 * Next.js (App Router) / TypeScript

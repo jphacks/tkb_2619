@@ -5,20 +5,16 @@ import { useRouter } from "next/navigation";
 import PageShell from "@/components/PageShell";
 import SongCard from "@/components/SongCard";
 import { useAppStore } from "@/store/useAppStore";
-import { musicSource } from "@/lib/music-source";
+import { musicSource, type SongQuery } from "@/lib/music-source";
 import { extractCommonSongs } from "@/lib/logic/common-songs";
+import { buildVoteCandidates } from "@/lib/logic/candidates";
 import { buildDefaultFiltersFromParticipants, recommendByAttributes, type AttributeFilters } from "@/lib/logic/recommend";
 import { GENERATIONS, GENRES, NATIONALITIES, type CandidateSong, type Song } from "@/types";
 
-function mergeCandidates(groups: CandidateSong[][]): CandidateSong[] {
-  const byId = new Map<string, CandidateSong>();
-  for (const group of groups) {
-    for (const candidate of group) {
-      if (!byId.has(candidate.song.id)) byId.set(candidate.song.id, candidate);
-    }
-  }
-  return Array.from(byId.values());
-}
+const inputClass =
+  "w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-fuchsia-400 focus:outline-none";
+
+const queryKey = (q: SongQuery) => `${q.title.trim()}\u0000${q.artist?.trim() ?? ""}`;
 
 function Chip({
   active,
@@ -49,16 +45,26 @@ export default function CandidatesPage() {
   const scene = useAppStore((s) => s.scene);
   const participants = useAppStore((s) => s.participants);
   const submittedSongs = useAppStore((s) => s.submittedSongs);
+  const importedSongs = useAppStore((s) => s.importedSongs);
   const addSubmittedSong = useAppStore((s) => s.addSubmittedSong);
   const setCandidates = useAppStore((s) => s.setCandidates);
   const hasHydrated = useAppStore((s) => s.hasHydrated);
+  const enrichingCount = useAppStore(
+    (s) => [...s.importedSongs, ...s.submittedSongs].filter((song) => song.metaStatus === "pending").length
+  );
 
-  const [allSongs, setAllSongs] = useState<Song[]>([]);
+  const [catalog, setCatalog] = useState<Song[]>([]);
   const [filters, setFilters] = useState<AttributeFilters>(() =>
     buildDefaultFiltersFromParticipants(useAppStore.getState().participants)
   );
-  const [query, setQuery] = useState("");
-  const [rawSearchResults, setRawSearchResults] = useState<Song[]>([]);
+  const [titleInput, setTitleInput] = useState("");
+  const [artistInput, setArtistInput] = useState("");
+  const [query, setQuery] = useState<SongQuery>({ title: "", artist: "" });
+  const [search, setSearch] = useState<{ key: string; songs: Song[]; error: string | null }>({
+    key: "",
+    songs: [],
+    error: null,
+  });
 
   useEffect(() => {
     if (!hasHydrated) return;
@@ -67,21 +73,34 @@ export default function CandidatesPage() {
   }, [hasHydrated, scene, participants.length, router]);
 
   useEffect(() => {
-    musicSource.getAllSongs().then(setAllSongs);
+    musicSource.getAllSongs().then(setCatalog);
   }, []);
 
+  // MusicBrainzはレート制限があるので、入力が止まってから検索する
   useEffect(() => {
-    if (query.trim().length === 0) return;
+    const timer = setTimeout(() => setQuery({ title: titleInput, artist: artistInput }), 600);
+    return () => clearTimeout(timer);
+  }, [titleInput, artistInput]);
+
+  useEffect(() => {
+    if (!query.title.trim()) return;
     let cancelled = false;
-    musicSource.searchSongs(query).then((results) => {
-      if (!cancelled) setRawSearchResults(results);
-    });
+    const key = queryKey(query);
+    musicSource
+      .searchSongs(query)
+      .then((songs) => !cancelled && setSearch({ key, songs, error: null }))
+      .catch(() => !cancelled && setSearch({ key, songs: [], error: "検索に失敗しました。少し待ってからもう一度お試しください。" }));
     return () => {
       cancelled = true;
     };
   }, [query]);
 
-  const searchResults = query.trim().length === 0 ? [] : rawSearchResults;
+  const hasQuery = titleInput.trim().length > 0;
+  const searchIsCurrent =
+    hasQuery && search.key === queryKey(query) && queryKey(query) === queryKey({ title: titleInput, artist: artistInput });
+  const searching = hasQuery && !searchIsCurrent;
+
+  const allSongs = useMemo(() => [...catalog, ...importedSongs], [catalog, importedSongs]);
 
   const commonSongs = useMemo(
     () => extractCommonSongs(participants, allSongs),
@@ -100,16 +119,26 @@ export default function CandidatesPage() {
 
   const submittedIds = useMemo(() => new Set(submittedCandidates.map((c) => c.song.id)), [submittedCandidates]);
 
+  // Spotify（英語表記）とカタログ（日本語表記）で同じ曲が別アーティスト名になるため、
+  // 共通曲・投稿曲と同じタイトルのおすすめ曲は出さない
+  const knownTitles = useMemo(
+    () => new Set([...commonSongs, ...submittedCandidates].map((c) => c.song.title.trim().toLowerCase())),
+    [commonSongs, submittedCandidates]
+  );
+
   const recommended = useMemo(
     () =>
       recommendByAttributes(allSongs, filters).filter(
-        (c) => !commonIds.has(c.song.id) && !submittedIds.has(c.song.id)
+        (c) =>
+          !commonIds.has(c.song.id) &&
+          !submittedIds.has(c.song.id) &&
+          !knownTitles.has(c.song.title.trim().toLowerCase())
       ),
-    [allSongs, filters, commonIds, submittedIds]
+    [allSongs, filters, commonIds, submittedIds, knownTitles]
   );
 
   const combined = useMemo(
-    () => mergeCandidates([commonSongs, submittedCandidates, recommended]),
+    () => buildVoteCandidates(commonSongs, submittedCandidates, recommended),
     [commonSongs, submittedCandidates, recommended]
   );
 
@@ -128,6 +157,12 @@ export default function CandidatesPage() {
       title="曲候補をチェック"
       subtitle="共通曲・投稿曲・おすすめ曲をまとめて確認しよう"
     >
+      {enrichingCount > 0 && (
+        <p className="mb-4 rounded-lg bg-white/5 px-3 py-2 text-xs text-white/60">
+          🔎 ジャンル・国の情報をMusicBrainzから取得中（残り{enrichingCount}曲）。取得でき次第、属性レコメンドに反映されます。
+        </p>
+      )}
+
       <section className="mb-7">
         <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-white">
           🎯 共通曲
@@ -153,29 +188,46 @@ export default function CandidatesPage() {
 
       <section className="mb-7">
         <h2 className="mb-2 text-sm font-bold text-white">📝 投稿曲</h2>
-        <div className="mb-3 flex gap-2">
+        <div className="mb-3 grid grid-cols-2 gap-2">
           <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="曲名・アーティストで検索して追加"
-            className="flex-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:border-fuchsia-400 focus:outline-none"
+            value={titleInput}
+            onChange={(e) => setTitleInput(e.target.value)}
+            placeholder="曲名"
+            className={inputClass}
+          />
+          <input
+            value={artistInput}
+            onChange={(e) => setArtistInput(e.target.value)}
+            placeholder="アーティスト（推奨）"
+            className={inputClass}
           />
         </div>
-        {searchResults.length > 0 && (
-          <div className="mb-3 flex flex-col gap-2 rounded-lg border border-white/10 bg-black/20 p-2">
-            {searchResults.slice(0, 5).map((song) => (
+        {searching && <p className="mb-3 text-xs text-white/50">MusicBrainzで検索中…</p>}
+        {searchIsCurrent && search.error && <p className="mb-3 text-xs text-rose-300">{search.error}</p>}
+        {searchIsCurrent && !search.error && search.songs.length === 0 && (
+          <p className="mb-3 text-xs text-white/50">見つかりませんでした。アーティスト名も入れると見つかりやすくなります。</p>
+        )}
+        {searchIsCurrent && search.songs.length > 0 && (
+          <div className="mb-3 flex flex-col gap-1 rounded-lg border border-white/10 bg-black/20 p-2">
+            {search.songs.slice(0, 8).map((song) => (
               <button
                 key={song.id}
                 onClick={() => {
                   addSubmittedSong(song);
-                  setQuery("");
+                  setTitleInput("");
+                  setArtistInput("");
                 }}
-                className="flex items-center justify-between rounded-md px-2 py-1.5 text-left text-sm text-white/80 hover:bg-white/10"
+                className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm text-white/80 hover:bg-white/10"
               >
-                <span>
-                  {song.title} <span className="text-white/40">/ {song.artist}</span>
+                <span className="min-w-0">
+                  <span className="block truncate">{song.title}</span>
+                  <span className="block truncate text-xs text-white/40">
+                    {song.artist}
+                    {song.year ? ` · ${song.year}` : ""}
+                    {song.origin === "musicbrainz" ? " · MusicBrainz" : ""}
+                  </span>
                 </span>
-                <span className="text-xs text-fuchsia-300">+追加</span>
+                <span className="shrink-0 text-xs text-fuchsia-300">+追加</span>
               </button>
             ))}
           </div>

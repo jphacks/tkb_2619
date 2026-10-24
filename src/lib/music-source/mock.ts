@@ -1,5 +1,5 @@
 import type { Song } from "@/types";
-import type { MusicSourceAdapter } from "./types";
+import type { MusicSourceAdapter, SongQuery } from "./types";
 
 /**
  * モック楽曲カタログ。
@@ -37,26 +37,18 @@ const MOCK_SONGS: Song[] = [
   { id: "s28", title: "夜に駆ける", artist: "YOASOBI", genre: "anime", year: 2019, generationTags: ["teens", "20s", "30s"], nationalityTags: ["JP"], colorFrom: "#1d4ed8", colorTo: "#3b82f6" },
 ];
 
-function normalizeKey(song: Pick<Song, "title" | "artist">): string {
-  // TODO: 現状は「タイトル＋アーティスト名の完全一致」で重複判定している。
-  // 将来はジャンル/アーティスト単位の緩い一致（表記揺れ・カバー曲の同一視など）にも対応したい。
-  return `${song.title.trim().toLowerCase()}__${song.artist.trim().toLowerCase()}`;
-}
-
 export const mockMusicSource: MusicSourceAdapter = {
   async getAllSongs() {
     return MOCK_SONGS;
   },
-  async searchSongs(query: string) {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
+  async searchSongs({ title, artist }: SongQuery) {
+    const t = title.trim().toLowerCase();
+    const a = artist?.trim().toLowerCase() ?? "";
+    if (!t) return [];
     return MOCK_SONGS.filter(
-      (s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)
+      (s) => s.title.toLowerCase().includes(t) && (!a || s.artist.toLowerCase().includes(a))
     );
-  },
-  async getSongById(id: string) {
-    return MOCK_SONGS.find((s) => s.id === id);
   },
 };
 
-export { MOCK_SONGS, normalizeKey };
+export { MOCK_SONGS };
