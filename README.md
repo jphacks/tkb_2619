@@ -1,8 +1,12 @@
 # Music Bridge（音楽で距離を縮める）
 
+### 🎵 [今すぐアプリを開く（GitHub Pages）](https://jphacks.github.io/tkb_2619/)
+
+インストール不要、待ち時間なしですぐ開けます。
+
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/jphacks/tkb_2619?quickstart=1)
 
-上のバッジをクリックするだけで、インストール作業なしにブラウザ上でアプリを起動できます（GitHub Codespaces）。数十秒〜数分待つと自動で `npm install` → `npm run dev` が実行され、ポート3000のプレビューが自動で開きます。
+コードを編集したい場合は上のバッジから GitHub Codespaces を起動できます（`npm install` → `npm run dev` まで自動実行）。
 
 ## 製品概要
 ### 背景(製品開発のきっかけ、課題等）
