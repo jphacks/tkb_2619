@@ -232,7 +232,7 @@ export async function lookupArtistMeta(name: string, mbArtistId?: string): Promi
 
   let meta: ArtistMeta | null = null;
   if (mbArtistId) {
-    const artist = await request<MbArtist>(`artist/${mbArtistId}`, { inc: "genres+tags" });
+    const artist = await request<MbArtist>(`artist/${encodeURIComponent(mbArtistId)}`, { inc: "genres+tags" });
     meta = { country: artist.country, tags: sortedTagNames(artist) };
   } else {
     const data = await request<{ artists?: MbArtist[] }>("artist", {

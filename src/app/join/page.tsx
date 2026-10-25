@@ -6,12 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AppHeader, outlineButton, Spinner, SpotifyLogo, spotifyButton } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
 import { getSavedName, saveIdentity, saveName, useRoomIdentity } from "@/lib/room/identity";
+import { isValidRoomId } from "@/lib/room/sanitize";
 import { startSpotifyLogin } from "@/lib/music-source/spotify";
 import type { RoomSnapshot } from "@/types";
 
 function JoinRoom() {
   const router = useRouter();
-  const roomId = useSearchParams().get("room");
+  const rawRoomId = useSearchParams().get("room");
+  const roomId = isValidRoomId(rawRoomId) ? rawRoomId : null;
   const identity = useRoomIdentity(roomId);
   const [loaded, setLoaded] = useState<{ roomId: string; snapshot: RoomSnapshot | null } | null>(null);
   // 名前は最初に入れてもらい、前回の名前があれば最初から入れておく

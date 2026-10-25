@@ -1,7 +1,8 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { AiPick, CandidateEntry, Member, Room, VoteEntry } from "@/types";
+import type { CandidateEntry, Member, Room, VoteEntry } from "@/types";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/config";
-import { generateMemberId, generateRoomId, parseConditions, type RoomBackend } from "./backend";
+import { generateMemberId, generateRoomId, type RoomBackend } from "./backend";
+import { parseAiPicks, parseConditions, parseSong } from "./sanitize";
 
 /**
  * Supabase（Postgres + Realtime）を使った本番用バックエンド。
@@ -66,7 +67,7 @@ interface CandidateRow {
   room_id: string;
   member_id: string;
   song_id: string;
-  song: CandidateEntry["song"];
+  song: unknown;
   source: CandidateEntry["source"];
   weight: number;
   added_at: string;
@@ -86,7 +87,7 @@ const toRoom = (r: RoomRow): Room => ({
   conditions: parseConditions(r.conditions),
   hostMemberId: r.host_member_id,
   finalSongId: r.final_song_id,
-  aiPicks: Array.isArray(r.ai_picks) ? (r.ai_picks as AiPick[]) : [],
+  aiPicks: parseAiPicks(r.ai_picks),
   createdAt: r.created_at,
 });
 
@@ -98,15 +99,22 @@ const toMember = (r: MemberRow): Member => ({
   joinedAt: r.joined_at,
 });
 
-const toCandidate = (r: CandidateRow): CandidateEntry => ({
-  roomId: r.room_id,
-  memberId: r.member_id,
-  songId: r.song_id,
-  song: r.song,
-  source: r.source,
-  weight: r.weight,
-  addedAt: r.added_at,
-});
+/** 曲データが壊れている行は読み飛ばす（誰でも書き込めるため、ほかの人の画面を壊せないように） */
+const toCandidate = (r: CandidateRow): CandidateEntry[] => {
+  const song = parseSong(r.song);
+  if (!song) return [];
+  return [
+    {
+      roomId: r.room_id,
+      memberId: r.member_id,
+      songId: r.song_id,
+      song,
+      source: r.source,
+      weight: Number.isFinite(r.weight) ? Math.min(Math.max(r.weight, 0), 1) : 0,
+      addedAt: r.added_at,
+    },
+  ];
+};
 
 const toVote = (r: VoteRow): VoteEntry => ({
   roomId: r.room_id,
@@ -202,7 +210,7 @@ export const supabaseBackend: RoomBackend = {
     return {
       room: toRoom(room),
       members: (check(members) as MemberRow[]).map(toMember),
-      candidates: (check(candidates) as CandidateRow[]).map(toCandidate),
+      candidates: (check(candidates) as CandidateRow[]).flatMap(toCandidate),
       votes: (check(votes) as VoteRow[]).map(toVote),
     };
   },
