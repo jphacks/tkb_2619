@@ -12,12 +12,12 @@ import { myVoteFor, type PoolItem } from "@/lib/logic/ranking";
 import { spotifyOpenUrl } from "@/lib/music-source/spotify";
 import { SWIPE_SCORES, type CandidateEntry, type Member, type SwipeDirection, type VoteScore } from "@/types";
 
-// 色は押した瞬間だけ付ける（普段から4色並ぶと画面がにぎやかになりすぎるため）
-const SCORE_BUTTONS: { score: VoteScore; label: string; pressed: string; direction: SwipeDirection }[] = [
-  { score: 0, label: "Nope", pressed: "active:bg-no-soft active:text-no", direction: "left" },
-  { score: 1, label: "So-so", pressed: "active:bg-meh-soft active:text-meh", direction: "down" },
-  { score: 2, label: "Better", pressed: "active:bg-better-soft active:text-better", direction: "right" },
-  { score: 3, label: "Best", pressed: "active:bg-best-soft active:text-best", direction: "up" },
+// 評価ごとに色を分けて、ひと目でどれを押すか分かるようにする（色は配色テーマの評価色に連動）
+const SCORE_BUTTONS: { score: VoteScore; label: string; color: string; direction: SwipeDirection }[] = [
+  { score: 0, label: "Nope", color: "bg-no-soft text-no", direction: "left" },
+  { score: 1, label: "So-so", color: "bg-meh-soft text-meh", direction: "down" },
+  { score: 2, label: "Better", color: "bg-better-soft text-better", direction: "right" },
+  { score: 3, label: "Best", color: "bg-best-soft text-best", direction: "up" },
 ];
 
 /**
@@ -109,7 +109,7 @@ export default function VotePage() {
     <>
       <main className="relative flex flex-1 flex-col px-4 pb-4 pt-6">
         <SwipeReaction reaction={reaction} />
-        <h1 className="font-display text-[22px] leading-tight">この曲、聴きたい？</h1>
+        <h1 className="text-[22px] font-bold leading-tight">この曲、聴きたい？</h1>
 
         {deck.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
@@ -169,13 +169,13 @@ export default function VotePage() {
             )}
 
             <div className="mt-5 grid grid-cols-4 gap-2">
-              {SCORE_BUTTONS.map(({ score, label, pressed, direction }) => (
+              {SCORE_BUTTONS.map(({ score, label, color, direction }) => (
                 <button
                   key={score}
                   type="button"
                   disabled={forced !== null}
                   onClick={() => setForced(direction)}
-                  className={`rounded-xl border border-line py-3 text-[14px] font-bold text-ink transition ${pressed}`}
+                  className={`rounded-xl py-3 text-[14px] font-bold transition active:scale-95 active:brightness-125 ${color}`}
                 >
                   {label}
                 </button>
