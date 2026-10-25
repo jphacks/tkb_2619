@@ -5,6 +5,7 @@ import { Pause, Play, SkipForward, X } from "lucide-react";
 import type { RankedItem } from "@/lib/logic/ranking";
 import { knownPreviewUrl, lookupPreviewUrl } from "@/lib/music-source/preview";
 import SongArtwork from "./SongArtwork";
+import { isSilent, unlockAudio } from "./unlockAudio";
 
 /** 先に試聴URLを探しておく曲数（タップした瞬間に再生を始めるため。iPhone はタップ直後でないと音を出せない） */
 const PREFETCH = 12;
@@ -100,8 +101,11 @@ export function useRankingPlayer(ranking: RankedItem[]) {
   useEffect(() => {
     const a = audio.current;
     if (!a) return;
-    a.addEventListener("ended", next);
-    return () => a.removeEventListener("ended", next);
+    const onEnded = () => {
+      if (!isSilent(a)) next();
+    };
+    a.addEventListener("ended", onEnded);
+    return () => a.removeEventListener("ended", onEnded);
   });
 
   // 上位の曲の試聴URLを先に探しておく（iTunes の回数制限があるので少し間をあけて順番に）
@@ -123,7 +127,10 @@ export function useRankingPlayer(ranking: RankedItem[]) {
 
   const playFrom = (key: string) => {
     const index = latest.current.findIndex((i) => i.key === key);
-    if (index >= 0) void playAt(index);
+    if (index < 0) return;
+    // 試聴URLがまだ分からない曲は探すのを待つことになるので、タップした今のうちに音を出せる状態にしておく
+    if (audio.current && knownPreviewUrl(latest.current[index].song) === undefined) unlockAudio(audio.current);
+    void playAt(index);
   };
 
   const toggle = () => {

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Song } from "@/types";
 import { knownPreviewUrl, lookupPreviewUrl } from "@/lib/music-source/preview";
 import { spotifyOpenUrl } from "@/lib/music-source/spotify";
+import { unlockAudio } from "./unlockAudio";
 
 /**
  * 1曲だけの試聴（30秒）。投票カードの▶で使う。
@@ -38,6 +39,7 @@ export function useSongPreview() {
     }
     // 先に見つけてある曲は待たずに再生する（iPhone はタップ直後でないと音を出せない）
     const known = knownPreviewUrl(song);
+    if (known === undefined) unlockAudio(a);
     const url = known === undefined ? await lookupPreviewUrl(song) : known;
     if (!url) {
       window.open(spotifyOpenUrl(song), "_blank", "noopener");
