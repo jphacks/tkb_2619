@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
-import { getIdentity, saveIdentity } from "@/lib/room/identity";
+import { getIdentity, getSavedName, saveIdentity } from "@/lib/room/identity";
 import { exchangeCodeForToken, importSpotifyLibrary, SpotifyError } from "@/lib/music-source/spotify";
 
 function SpotifyCallback() {
@@ -35,7 +35,7 @@ function SpotifyCallback() {
       if (!snapshot) throw new SpotifyError("ルームが見つかりませんでした。");
       let memberId = identity?.memberId && snapshot.members.some((m) => m.id === identity.memberId) ? identity.memberId : null;
       if (!memberId) {
-        memberId = (await roomBackend.joinRoom(roomId, { name: displayName, kind: "spotify" })).id;
+        memberId = (await roomBackend.joinRoom(roomId, { name: getSavedName() || displayName, kind: "spotify" })).id;
         saveIdentity(roomId, { memberId });
       }
       if (identity?.isHost && !snapshot.room.hostMemberId) await roomBackend.setHost(roomId, memberId);
