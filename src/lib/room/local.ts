@@ -2,7 +2,7 @@ import type { RoomSnapshot } from "@/types";
 import { generateMemberId, generateRoomId, parseConditions, type RoomBackend } from "./backend";
 
 /**
- * Supabase未設定時のデモ用バックエンド。
+ * Supabase未設定時のローカル用バックエンド。
  * localStorageに保存し、BroadcastChannelで同じブラウザの別タブへ変更を通知する。
  * 別の端末とは共有できない（招待URLを他のスマホで開いても「ルームが見つかりません」になる）。
  */

@@ -5,7 +5,6 @@
 ## 各種リンク
 
 - **アプリURL**: https://jphacks.github.io/tkb_2619/
-<!-- デモ動画・発表スライドのURLができたらここに追加する -->
 
 ### アプリ QR コード
 
@@ -132,5 +131,5 @@ flowchart LR
 - **集団カバー率に基づくレコメンド**: 選んだ属性のうち何割に届くかで曲を評価する（[`src/lib/logic/recommend.ts`](src/lib/logic/recommend.ts)）
 - **AIの提案を実在の曲に照合**: Gemini が挙げた曲をカタログと iTunes で照合し、誤字を補正してジャケット付きで候補に入れる（[`src/lib/ai.ts`](src/lib/ai.ts)、[`supabase/functions/recommend-songs/`](supabase/functions/recommend-songs/index.ts)）
 - **表記揺れを吸収した曲の同一判定**: 「Kenshi Yonezu / 米津玄師」のようなアーティスト名の違いを同じ曲として扱う（[`src/lib/music-source/normalize.ts`](src/lib/music-source/normalize.ts)）
-- **ルームの保存先の抽象化とリアルタイム同期**: Supabase と同じブラウザ内のデモモードを同じインターフェースで切り替える（[`src/lib/room/`](src/lib/room/)）
+- **ルームの保存先の抽象化とリアルタイム同期**: Supabase と同じブラウザ内のローカルモードを同じインターフェースで切り替える（[`src/lib/room/`](src/lib/room/)）
 - **スワイプ投票カード**: 4方向のスワイプ判定とリアクション表示（[`src/components/VoteCard.tsx`](src/components/VoteCard.tsx)、[`src/components/SwipeReaction.tsx`](src/components/SwipeReaction.tsx)）

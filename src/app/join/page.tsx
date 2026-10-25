@@ -77,7 +77,7 @@ function JoinRoom() {
           <p className="text-lg font-bold">ルームが見つかりません</p>
           <p className="text-sm leading-relaxed text-muted">
             {roomBackend.kind === "local"
-              ? "いまはデモモード（この端末のブラウザ内だけで共有）です。別の端末で作ったルームには参加できません。"
+              ? "いまはローカルモード（この端末のブラウザ内だけで共有）です。別の端末で作ったルームには参加できません。"
               : "招待URLが正しいか確認してください。"}
           </p>
           <Link href="/" className="mt-2 text-sm font-bold text-accent underline">
