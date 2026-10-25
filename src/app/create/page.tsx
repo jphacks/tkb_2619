@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import QRCode from "qrcode";
 import { Check, Copy } from "lucide-react";
 import { AppHeader, primaryButton } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
@@ -77,6 +78,19 @@ export default function CreateRoomPage() {
     setConditions((c) => ({ ...c, [key]: value }));
 
   const inviteUrl = room ? `${window.location.origin}${BASE_PATH}/join?room=${room.id}` : "";
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  // 招待URLのQRコード。カメラで読み取りやすいよう、暗い色を明るい背景に描く
+  useEffect(() => {
+    if (!inviteUrl) return;
+    let cancelled = false;
+    QRCode.toDataURL(inviteUrl, { width: 640, margin: 2, errorCorrectionLevel: "M", color: { dark: "#1e1410", light: "#fbefe4" } })
+      .then((url) => !cancelled && setQrDataUrl(url))
+      .catch(() => !cancelled && setQrDataUrl(null));
+    return () => {
+      cancelled = true;
+    };
+  }, [inviteUrl]);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -107,6 +121,22 @@ export default function CreateRoomPage() {
     }
   };
 
+  // QRコードを画像として保存する。スマホは共有シート（「画像を保存」がある）、それ以外はPNGをダウンロード
+  const handleSaveQr = async () => {
+    if (!qrDataUrl || !room) return;
+    const fileName = `musiconnect-${room.id}.png`;
+    const blob = await (await fetch(qrDataUrl)).blob();
+    const file = new File([blob], fileName, { type: "image/png" });
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], title: "Musiconnect 招待QRコード" }).catch(() => undefined);
+      return;
+    }
+    const link = document.createElement("a");
+    link.href = qrDataUrl;
+    link.download = fileName;
+    link.click();
+  };
+
   // 作成後は条件を変えられないので、URLを送ることとルームに入ることだけに絞る
   if (room) {
     return (
@@ -118,7 +148,26 @@ export default function CreateRoomPage() {
             <br />
             みんなに送ろう
           </p>
-          <div className="mt-6 flex items-center gap-2 border-y border-line py-3">
+
+          <div className="mt-6 flex flex-col items-center gap-2">
+            {qrDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={qrDataUrl} alt="招待URLのQRコード" className="h-56 w-56 rounded-xl" />
+            ) : (
+              <span className="h-56 w-56 rounded-xl bg-surface" />
+            )}
+            <p className="text-[12px] text-muted">その場の人は、カメラでこれを読み取ればOK</p>
+            <button
+              type="button"
+              onClick={handleSaveQr}
+              disabled={!qrDataUrl}
+              className="py-1 text-[14px] font-bold text-accent disabled:opacity-40"
+            >
+              画像を保存
+            </button>
+          </div>
+
+          <div className="mt-4 flex items-center gap-2 border-y border-line py-3">
             <span className="min-w-0 flex-1 truncate text-[14px] text-muted">{inviteUrl}</span>
             <button
               type="button"
