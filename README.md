@@ -44,6 +44,8 @@
 4. **スワイプで投票**: 追加された曲・よく聴かれている曲・AIのおすすめを1曲ずつ交互に、上下左右のスワイプで評価（それぞれ、多くの人と被った曲が先に出る）
 5. **ランキングで決める**: 投票のたびに順位が入れ替わり、1位から順に試聴しながら、最後は幹事が次に流す曲を決める
 
+**みんなが聴きたい曲が流れて、みんなで盛り上がれる！**
+
 | 1. ルームを作る | 2. URLから参加 | 3. 曲の候補が集まる | 4. スワイプで投票 | 5. ランキングで決める |
 | :---: | :---: | :---: | :---: | :---: |
 | <img src="docs/images/steps/step1-create.png" width="160" alt="ルーム作成画面。ジャンル・国籍・年代を複数選んでいる" /> | <img src="docs/images/steps/step2-join.png" width="160" alt="参加画面。名前を入れて、Spotifyと連携するかSpotifyなしで参加する" /> | <img src="docs/images/steps/step3-room.png" width="160" alt="ルーム画面。参加者6人と、AIが候補に入れた曲が表示されている" /> | <img src="docs/images/steps/step4-vote.png" width="160" alt="投票画面。4人が投稿した曲のカードと、4段階の評価ボタン" /> | <img src="docs/images/steps/step5-results.png" width="160" alt="投票結果画面。6人の投票によるランキングと、1位から流すボタン" /> |
