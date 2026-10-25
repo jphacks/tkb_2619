@@ -127,7 +127,7 @@ export default function VoteCard({
         </div>
       )}
       <div className="relative">
-        <SongArtwork song={song} className="aspect-square w-full rounded-xl" />
+        <SongArtwork song={song} large className="aspect-square w-full rounded-xl" />
         <button
           type="button"
           aria-label="試聴"

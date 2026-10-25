@@ -45,9 +45,7 @@ function ChipRow<T extends string>({
             );
           })}
         </div>
-        <p className="mt-1.5 text-[11px] text-muted">
-          {selected.length === 0 ? "指定なし（複数選択できます）" : `${selected.length}つ選択中`}
-        </p>
+        {selected.length > 0 && <p className="mt-1.5 text-[11px] text-muted">{selected.length}つ選択中</p>}
       </div>
     </div>
   );
@@ -110,13 +108,11 @@ export default function CreateRoomPage() {
               ))}
             </div>
           </div>
-          <p className="pb-3.5 pt-2 text-[12px] text-muted">AIをOFFにすると条件入力は非表示</p>
+          <div className="pb-3" />
 
           {aiEnabled && (
             <fieldset disabled={Boolean(room)}>
-              <p className="border-t border-line pb-1 pt-3 text-[12px] leading-relaxed text-muted">
-                集まる人たちの属性を選んでください。複数選ぶと、みんなに届く曲が優先されます。
-              </p>
+              <p className="border-t border-line pb-1 pt-3 text-[14px] font-bold">集まる人は？</p>
               <ChipRow label="性別" selected={conditions.genders} options={GENDERS} onChange={(v) => set("genders", v)} />
               <ChipRow
                 label="ジャンル"
@@ -174,7 +170,7 @@ export default function CreateRoomPage() {
         )}
         {room && (
           <p className="text-center text-[12px] text-muted">
-            URLを参加者に送ってください。あなたも「ルームに入る」から参加できます。
+            URLをみんなに送ろう
           </p>
         )}
       </main>

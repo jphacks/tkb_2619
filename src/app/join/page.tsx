@@ -94,7 +94,7 @@ function JoinRoom() {
           <span className="font-display text-[32px] leading-none text-accent">Musiconnect</span>
           <h2 className="mt-5 text-[22px] font-bold">みんなの選曲ルーム</h2>
           <p className="mt-1.5 text-[14px] text-muted">
-            {snapshot.members.length > 0 ? `${snapshot.members.length}人が参加中 · ` : ""}参加方法を選んでください
+            {snapshot.members.length > 0 ? `${snapshot.members.length}人が参加中` : "最初の参加者です"}
           </p>
 
           {mode === "choose" ? (
@@ -106,13 +106,10 @@ function JoinRoom() {
               </button>
               <button type="button" onClick={() => setMode("guest")} disabled={busy} className={outlineButton}>
                 <User size={20} />
-                <span className="flex-1 text-center">アカウントを持っていない</span>
+                <span className="flex-1 text-center">Spotifyなしで参加</span>
                 <ChevronRight size={20} />
               </button>
-              <p className="mt-3 text-[12px] text-muted">Spotifyなしでも参加できます</p>
-              <p className="text-[11px] leading-relaxed text-muted/80">
-                Spotify連携すると、過去1ヶ月によく聴いた曲がみんなの候補に入ります
-              </p>
+              <p className="mt-2 text-[12px] text-muted">連携すると、最近よく聴いてる曲がみんなの候補に入るよ</p>
             </div>
           ) : (
             <div className="mt-8 flex w-full flex-col gap-3 text-left">

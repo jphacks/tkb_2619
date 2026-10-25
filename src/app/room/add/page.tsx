@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Sparkles, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { AppHeader, TabBar } from "@/components/ui";
 import { useRoom } from "@/components/RoomProvider";
 import { SongRow } from "@/components/SongRow";
@@ -112,13 +112,13 @@ export default function AddSongsPage() {
         {typed && (
           <section className="mt-5">
             <h2 className="text-[17px] font-bold">検索結果</h2>
-            <div className="mt-1 divide-y divide-line rounded-2xl bg-surface px-4">
+            <div className="mt-1 divide-y divide-line">
               {searching && <p className="py-5 text-center text-[13px] text-muted">検索中…</p>}
               {showingResults && search.error && (
-                <p className="py-5 text-center text-[13px] text-heart">検索に失敗しました。少し待ってからもう一度お試しください。</p>
+                <p className="py-5 text-center text-[13px] text-heart">うまく検索できませんでした。もう一回試してみて</p>
               )}
               {showingResults && !search.error && search.songs.length === 0 && (
-                <p className="py-5 text-center text-[13px] text-muted">見つかりませんでした。「曲名 アーティスト名」で探してみてください。</p>
+                <p className="py-5 text-center text-[13px] text-muted">見つからなかった…「曲名 アーティスト名」で探してみて</p>
               )}
               {showingResults && search.songs.map((song) => row(song))}
             </div>
@@ -127,23 +127,18 @@ export default function AddSongsPage() {
 
         <section className="mt-6 border-t border-line pt-5">
           <h2 className="text-[19px] font-bold">あなたへのおすすめ</h2>
-          <p className="mt-0.5 text-[13px] text-muted">Spotifyに保存していない曲も、好みから提案</p>
-          <p className="mt-3 flex items-center gap-2 rounded-xl bg-accent-soft px-3.5 py-2.5 text-[13px] font-medium text-accent">
-            <Sparkles size={17} />
-            {snapshot.candidates.some((c) => c.memberId === me.id)
-              ? "保存した曲・アーティストをもとに"
-              : "このルームの条件をもとに（曲を追加すると好みに合わせて変わります）"}
+          <p className="mt-0.5 text-[13px] text-muted">
+            {snapshot.candidates.some((c) => c.memberId === me.id) ? "追加した曲に近い曲" : "このルームの条件から"}
           </p>
-          <div className="mt-2 divide-y divide-line rounded-2xl bg-surface px-4">
+          <div className="mt-2 divide-y divide-line">
             {recommendations.length === 0 ? (
-              <p className="py-5 text-center text-[13px] text-muted">おすすめはまだありません</p>
+              <p className="py-5 text-center text-[13px] text-muted">まだおすすめがないみたい</p>
             ) : (
               recommendations.map((r) => row(r.song, r.reason))
             )}
           </div>
         </section>
 
-        <p className="mt-5 text-center text-[12px] text-muted">追加した曲はみんなの投票候補になります</p>
       </main>
       <TabBar roomId={roomId} active="add" />
     </>

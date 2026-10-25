@@ -63,28 +63,16 @@ export default function ResultsPage() {
     <>
       <AppHeader title="投票結果" backHref={`/room?room=${roomId}`} />
       <main className="flex flex-1 flex-col gap-3 px-4 pb-6">
-        <div className="flex items-center justify-between rounded-2xl bg-surface px-4 py-3">
-          <span className="flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1.5 text-[13px] font-bold text-accent">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute h-full w-full animate-ping rounded-full bg-accent/60" />
-              <span className="relative h-2.5 w-2.5 rounded-full bg-accent" />
-            </span>
-            リアルタイム更新
-          </span>
-          <span className="text-right">
-            <span className="block text-[14px] font-bold">
-              {voters} / {snapshot.members.length}人が投票中
-            </span>
-            <span className="block text-[11px] text-muted">{updatedLabel(updatedAt, now)}</span>
-          </span>
-        </div>
+        <p className="text-[13px] tabular-nums text-muted">
+          {voters}/{snapshot.members.length}人が投票 · {updatedLabel(updatedAt, now)}
+        </p>
 
         <FinalSongBanner />
 
         {ranking.length === 0 ? (
-          <p className="py-16 text-center text-[14px] text-muted">まだ候補がありません</p>
+          <p className="py-16 text-center text-[14px] text-muted">まだ候補がないみたい</p>
         ) : (
-          <ol className="flex flex-col gap-2">
+          <ol className="flex flex-col divide-y divide-line">
             {ranking.slice(0, SHOWN).map((item, i, shown) => {
               const delta = rankState.deltas.get(item.key);
               const voted = item.voteCount > 0;
@@ -95,24 +83,20 @@ export default function ResultsPage() {
               return (
                 <Fragment key={item.key}>
                   {firstUnvoted && (
-                    <li className="mt-3 px-1 text-[12px] text-muted">まだ誰も投票していない曲（候補の順）</li>
+                    <li className="pb-1 pt-5 text-[12px] text-muted">まだ誰も投票してない曲</li>
                   )}
-                  <li
-                    className={`rounded-2xl border transition ${top ? "border-accent/15 bg-accent-soft/70" : "border-line bg-surface"}`}
-                  >
+                  <li>
                     <button
                       type="button"
                       onClick={() => setSelected(open ? null : item.key)}
-                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
+                      className="flex w-full items-center gap-3 py-2.5 text-left"
                     >
                       <span
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[15px] font-bold ${
-                          top ? "bg-accent text-on-accent" : "bg-no-soft text-ink"
-                        }`}
+                        className={`w-6 shrink-0 text-center text-[15px] font-bold tabular-nums ${top ? "text-accent" : "text-muted"}`}
                       >
                         {i + 1}
                       </span>
-                      <SongArtwork song={item.song} className="h-12 w-12 rounded-lg" />
+                      <SongArtwork song={item.song} className="h-12 w-12 rounded-md" />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15px] font-bold">{item.song.title}</span>
                         <span className="block truncate text-[12px] text-muted">{item.song.artist}</span>
@@ -124,16 +108,16 @@ export default function ResultsPage() {
                         </span>
                       )}
                       {voted ? (
-                        <span className={`w-[64px] shrink-0 text-right font-bold ${top ? "text-accent" : ""}`}>
-                          <span className="text-[22px]">{item.pt}</span>
-                          <span className="text-[12px]">pt</span>
+                        <span className="w-[52px] shrink-0 text-right tabular-nums">
+                          <span className="text-[18px] font-bold">{item.pt}</span>
+                          <span className="text-[11px] text-muted">pt</span>
                         </span>
                       ) : (
-                        <span className="w-[64px] shrink-0 text-right text-[12px] font-bold text-muted">未投票</span>
+                        <span className="w-[52px] shrink-0 text-right text-[12px] text-muted">未投票</span>
                       )}
                     </button>
                     {open && (
-                      <div className="flex flex-wrap items-center gap-2 border-t border-black/5 px-3 py-2.5 text-[12px]">
+                      <div className="flex flex-wrap items-center gap-2 pb-3 pl-9 text-[12px]">
                         <span className="mr-auto text-muted">
                           {sourceLabel(item)}
                           {item.voteAverage !== null && ` · 平均${item.voteAverage.toFixed(1)}点（${item.voteCount}票）`}
@@ -166,11 +150,7 @@ export default function ResultsPage() {
           </ol>
         )}
 
-        <p className="text-center text-[12px] text-muted">投票の追加・変更にあわせて順位が変わります</p>
-        <p className="text-center text-[11px] text-muted/80">
-          pt = 候補ランキング（被った人数・よく聴く度合い・AI）40% ＋ スワイプ平均 60%。未投票の曲は下に並びます
-          {isHost && " ／ 曲をタップして「この曲を流す」で決定"}
-        </p>
+        {isHost && <p className="text-[12px] text-muted">曲をタップすると、次に流す曲に決められます</p>}
       </main>
       <TabBar roomId={roomId} active="results" />
     </>
