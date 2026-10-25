@@ -112,7 +112,7 @@ interface SpotifyTrack {
 async function spotifyGet<T>(path: string, token: string): Promise<T> {
   const res = await fetch(`https://api.spotify.com/v1${path}`, {
     // 曲名・アーティスト名を日本語表記で受け取り、日本語のカタログと「被り判定」が一致しやすくする
-    // TODO: 英語表記で返ってきた場合（Idol / アイドル 等）の同一視はMusicBrainzの別名検索で対応したい
+    // 未対応: 英語表記で返ってきた場合（Idol / アイドル 等）の同一視はMusicBrainzの別名検索で対応したい
     headers: { Authorization: `Bearer ${token}`, "Accept-Language": "ja" },
   });
   if (res.status === 403) {

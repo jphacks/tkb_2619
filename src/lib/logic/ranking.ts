@@ -4,7 +4,7 @@ import type { Recommendation } from "./recommend";
 
 /**
  * 議事録の流れ: 曲の候補出し（投稿 / Spotifyデータ / AI）→ 候補ランキング → スワイプ投票 → 最終ランキング。
- * 重みは仮決定（TODO: デモでの体感を見て調整）。
+ * 重みはデモでの体感をもとに決めた値で、ここを変えるだけで並び順を調整できる。
  */
 export const RANKING_WEIGHTS = {
   /** 何人が持ち込んだか（被りの人数） */

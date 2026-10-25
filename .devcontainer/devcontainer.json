@@ -1,10 +1,10 @@
 {
-  "name": "Music Bridge Dev",
+  "name": "Musiconnect Dev",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
   "forwardPorts": [3000],
   "portsAttributes": {
     "3000": {
-      "label": "Music Bridge (Next.js dev server)",
+      "label": "Musiconnect (Next.js dev server)",
       "onAutoForward": "openPreview"
     }
   },

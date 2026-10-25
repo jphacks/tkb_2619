@@ -32,7 +32,7 @@ export function canonicalArtist(artist: string): string {
 /**
  * 曲が「被っている」かの判定キー（議事録の仮決定: タイトル＋アーティスト名の一致）。
  * アーティスト名は英語表記→日本語表記の別名を吸収している。
- * TODO: 曲名の表記揺れ（Idol / アイドル）や、ジャンル/アーティスト単位の緩い一致には未対応。
+ * 未対応: 曲名の表記揺れ（Idol / アイドル）や、ジャンル/アーティスト単位の緩い一致には未対応。
  */
 export function normalizeKey(song: Pick<Song, "title" | "artist">): string {
   return `${song.title.trim().toLowerCase()}__${canonicalArtist(song.artist).toLowerCase()}`;
@@ -85,7 +85,7 @@ const GENERATION_AGE_RANGES: { id: Generation; min: number; max: number }[] = [
 /**
  * 発売年から「この曲を青春時代に聴いていた世代」を推定する簡易ヒューリスティック。
  * 発売当時12〜22歳だった人の現在の年齢帯と、直近3年の曲は10代・20代にも割り当てる。
- * TODO: 実際の世代別の認知度データ（チャート等）に置き換えたい。
+ * 今後: 実際の世代別の認知度データ（チャート等）に置き換えたい。
  */
 export function generationsForYear(year: number, now = new Date().getFullYear()): Generation[] {
   if (!Number.isFinite(year) || year <= 0) return [];

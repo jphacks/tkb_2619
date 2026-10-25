@@ -6,7 +6,7 @@ import { colorsForId, generationsForYear } from "./normalize";
  * MusicBrainzには人気度の指標がなく、条件だけで選ぶと誰も知らない曲ばかりになるため、
  * 「よく知られた曲」をここで用意している。
  * popularity（0〜100）と nationalityTags（その国でよく聴かれる）は目安としての手入力値。
- * TODO: 国別・世代別チャートなどの実データに置き換える（議事録「世代の人気ランキング」「国のチャート」）。
+ * 今後: 国別・世代別チャートなどの実データに置き換える（議事録「世代の人気ランキング」「国のチャート」）。
  */
 type Entry = [
   title: string,
