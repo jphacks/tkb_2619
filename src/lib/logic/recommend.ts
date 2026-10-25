@@ -21,8 +21,8 @@ export interface Recommendation {
 
 /**
  * 「その他」の自由入力を雰囲気タグに変換するキーワード辞書。
- * TODO: 議事録の「文章ベースで候補を選出」は本来LLMで解釈したい。APIキーをブラウザに置けないため、
- * Supabase Edge Function 経由でLLM（Claude等）を呼ぶ形に置き換える。
+ * AIおすすめ（Supabase Edge Function `recommend-songs` 経由の Gemini）が使えないときの、
+ * ブラウザ内だけで動く簡易版として使う。
  */
 const MOOD_KEYWORDS: Record<Mood, string[]> = {
   upbeat: ["明るい", "盛り上が", "元気", "ノリ", "アップテンポ", "テンション", "楽しい", "ダンス", "踊"],
