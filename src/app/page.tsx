@@ -3,15 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Car, Mic, PartyPopper } from "lucide-react";
 import { primaryButton } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
 
 // 例はあくまで使い方のヒント。ルームの相手を限定するものではない
 const SCENES = [
-  { Icon: Mic, title: "カラオケ", example: "上司や先輩など、世代が違う人と" },
-  { Icon: PartyPopper, title: "パーティー", example: "留学生など、国籍が違う人と" },
-  { Icon: Car, title: "ドライブ", example: "好きな音楽ジャンルが違う人と" },
+  { title: "カラオケ", example: "上司や先輩など、世代が違う人と" },
+  { title: "パーティー", example: "留学生など、国籍が違う人と" },
+  { title: "ドライブ", example: "好きな音楽ジャンルが違う人と" },
 ];
 
 /** 招待URLでもルームIDだけでも受け付ける */
@@ -43,13 +42,10 @@ export default function HomePage() {
 
       <p className="mt-8 text-[13px] text-muted">たとえば、こんなときに</p>
       <ul className="mt-3 flex flex-col gap-4">
-        {SCENES.map(({ Icon, title, example }) => (
-          <li key={title} className="flex items-start gap-3">
-            <Icon size={26} className="mt-0.5 shrink-0 text-accent" />
-            <div>
-              <p className="text-[19px] font-bold leading-tight">{title}</p>
-              <p className="mt-1 text-[14px] text-muted">{example}</p>
-            </div>
+        {SCENES.map(({ title, example }) => (
+          <li key={title}>
+            <p className="text-[19px] font-bold leading-tight">{title}</p>
+            <p className="mt-1 text-[14px] text-muted">{example}</p>
           </li>
         ))}
       </ul>
@@ -58,7 +54,6 @@ export default function HomePage() {
 
       <Link href="/create" className={`${primaryButton} mt-10`}>
         ルームを作る
-        <ArrowRight size={20} />
       </Link>
 
       <div className="mt-8 border-t border-line pt-5">

@@ -2,32 +2,40 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronRight, Copy } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { AppHeader, primaryButton } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
 import { saveIdentity } from "@/lib/room/identity";
 import { BASE_PATH } from "@/lib/config";
 import { AGE_GROUPS, EMPTY_CONDITIONS, GENDERS, GENRES, NATIONALITIES, type Room, type RoomConditions } from "@/types";
 
-/** 集団の属性を選ぶ行（複数選択。何も選ばなければ指定なし） */
+/**
+ * 集団の属性を選ぶ行（複数選択。何も選ばなければ指定なし）。
+ * 選択肢が多い行は、よく使うものだけ（visible 個）を先に出し、残りは「ほか○」で開く。選んだものは常に見せる
+ */
 function ChipRow<T extends string>({
   label,
   selected,
   options,
   onChange,
+  visible = options.length,
 }: {
   label: string;
   selected: T[];
   options: { id: T; label: string }[];
   onChange: (next: T[]) => void;
+  visible?: number;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const toggle = (id: T) => onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  const shown = expanded ? options : options.filter((o, i) => i < visible || selected.includes(o.id));
+  const hidden = options.length - shown.length;
   return (
     <div className="grid grid-cols-[72px_1fr] gap-3 border-t border-line py-3.5">
       <span className="pt-1.5 text-[16px] font-bold">{label}</span>
       <div>
         <div className="flex flex-wrap gap-1.5">
-          {options.map((o) => {
+          {shown.map((o) => {
             const on = selected.includes(o.id);
             return (
               <button
@@ -44,6 +52,11 @@ function ChipRow<T extends string>({
               </button>
             );
           })}
+          {(hidden > 0 || expanded) && options.length > visible && (
+            <button type="button" onClick={() => setExpanded((v) => !v)} className="px-2 py-1.5 text-[13px] text-muted underline">
+              {expanded ? "閉じる" : `ほか${hidden}`}
+            </button>
+          )}
         </div>
         {selected.length > 0 && <p className="mt-1.5 text-[11px] text-muted">{selected.length}つ選択中</p>}
       </div>
@@ -89,7 +102,7 @@ export default function CreateRoomPage() {
     <>
       <AppHeader title="ルームを作成" backHref="/" />
       <main className="flex flex-1 flex-col gap-4 px-4 pb-8">
-        <section className="rounded-2xl bg-surface px-4 pb-1 pt-4">
+        <section className="pt-2">
           <div className="flex items-center justify-between">
             <span className="text-[18px] font-bold">AIレコメンド</span>
             <div className="grid grid-cols-2 rounded-xl border border-line bg-app p-1">
@@ -118,12 +131,14 @@ export default function CreateRoomPage() {
                 label="ジャンル"
                 selected={conditions.genres}
                 options={GENRES.filter((g) => g.id !== "other")}
+                visible={6}
                 onChange={(v) => set("genres", v)}
               />
               <ChipRow
                 label="国籍"
                 selected={conditions.nationalities}
                 options={NATIONALITIES}
+                visible={6}
                 onChange={(v) => set("nationalities", v)}
               />
               <ChipRow label="年代" selected={conditions.ageGroups} options={AGE_GROUPS} onChange={(v) => set("ageGroups", v)} />
@@ -143,19 +158,17 @@ export default function CreateRoomPage() {
 
         {!room ? (
           <button type="button" onClick={handleCreate} disabled={creating} className={primaryButton}>
-            <span className="flex-1 pl-6 text-center">{creating ? "作成中…" : "招待URLを作成"}</span>
-            <ChevronRight size={22} />
+            {creating ? "作成中…" : "招待URLを作成"}
           </button>
         ) : (
           <button type="button" onClick={() => router.push(`/join?room=${room.id}`)} className={primaryButton}>
-            <span className="flex-1 pl-6 text-center">ルームに入る</span>
-            <ChevronRight size={22} />
+            ルームに入る
           </button>
         )}
         {error && <p className="text-center text-[13px] text-heart">{error}</p>}
 
         {room && (
-          <section className="flex items-center gap-2 rounded-2xl bg-surface px-4 py-3">
+          <section className="flex items-center gap-2 border-t border-line pt-4">
             <span className="shrink-0 text-[14px] font-bold">招待URL</span>
             <span className="min-w-0 flex-1 truncate rounded-lg bg-app px-3 py-2 text-[13px] text-muted">{inviteUrl}</span>
             <button
