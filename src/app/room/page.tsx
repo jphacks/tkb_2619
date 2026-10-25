@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Copy, Plus, UserPlus } from "lucide-react";
+import { Check, Copy, Plus } from "lucide-react";
 import { AppHeader, TabBar, primaryButton } from "@/components/ui";
 import { useRoom } from "@/components/RoomProvider";
 import FinalSongBanner from "@/components/FinalSongBanner";
+import MemberAvatar from "@/components/MemberAvatar";
 import AiPicksPanel from "@/components/AiPicksPanel";
 import { roomBackend } from "@/lib/room";
 import { BASE_PATH } from "@/lib/config";
@@ -55,14 +56,15 @@ export default function RoomHubPage() {
 
         {/* 投票と結果は下のタブから行けるので、ここでは「次にやること」だけを置く */}
         <section>
-          <p className="text-[13px] text-muted">いまの参加者</p>
-          <p className="mt-1 font-display text-[40px] leading-none">
-            {members.length}
-            <span className="ml-1 font-sans text-[16px] font-bold">人</span>
-          </p>
-          <p className="mt-2 text-[14px] leading-relaxed">
-            {members.map((m) => (m.id === me.id ? `${m.name}（あなた）` : m.name)).join("、")}
-          </p>
+          <p className="text-[13px] text-muted">参加者 {members.length}人</p>
+          <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-3">
+            {members.map((m) => (
+              <li key={m.id} className="flex w-14 flex-col items-center gap-1.5">
+                <MemberAvatar member={m} isMe={m.id === me.id} />
+                <span className="w-full truncate text-center text-[11px]">{m.id === me.id ? "あなた" : m.name}</span>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <AiPicksPanel />
@@ -93,7 +95,6 @@ export default function RoomHubPage() {
             disabled={demoState !== "idle"}
             className="flex items-center justify-center gap-1.5 py-2 text-[12px] text-muted underline disabled:no-underline"
           >
-            <UserPlus size={14} />
             {demoState === "adding" ? "デモ用メンバーを追加中…" : demoState === "done" ? "デモ用メンバーを追加しました" : "デモ用に5人追加する（発表用）"}
           </button>
         )}

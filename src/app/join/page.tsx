@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, User } from "lucide-react";
 import { AppHeader, outlineButton, primaryButton, Spinner, SpotifyLogo, spotifyButton } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
 import { saveIdentity, useRoomIdentity } from "@/lib/room/identity";
@@ -101,13 +100,10 @@ function JoinRoom() {
             <div className="mt-8 flex w-full flex-col gap-3">
               <button type="button" onClick={joinWithSpotify} disabled={busy} className={spotifyButton}>
                 <SpotifyLogo />
-                <span className="flex-1 text-center">{busy ? "Spotifyに移動中…" : "Spotifyで登録・連携"}</span>
-                <ChevronRight size={20} />
+                {busy ? "Spotifyに移動中…" : "Spotifyで登録・連携"}
               </button>
               <button type="button" onClick={() => setMode("guest")} disabled={busy} className={outlineButton}>
-                <User size={20} />
-                <span className="flex-1 text-center">Spotifyなしで参加</span>
-                <ChevronRight size={20} />
+                Spotifyなしで参加
               </button>
               <p className="mt-2 text-[12px] text-muted">連携すると、最近よく聴いてる曲がみんなの候補に入るよ</p>
             </div>

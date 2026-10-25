@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useRoom } from "./RoomProvider";
 import { roomBackend } from "@/lib/room";
 import { isAiAvailable, requestAiPicks } from "@/lib/ai";
@@ -46,10 +46,7 @@ export default function AiPicksPanel() {
   return (
     <section className="border-t border-line pt-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="flex items-center gap-1.5 text-[14px] font-bold">
-          <Sparkles size={16} className="text-accent" />
-          AIのおすすめ
-        </p>
+        <p className="text-[14px] font-bold">AIのおすすめ</p>
         {isHost && available && (
           <button
             type="button"
