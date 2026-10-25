@@ -30,7 +30,7 @@ const MOODS = new Set<string>(["upbeat", "singalong", "romantic", "chill", "emot
 const ORIGINS = new Set<string>(["catalog", "spotify", "musicbrainz", "itunes", "ai"] satisfies SongOrigin[]);
 
 /** ジャケット画像を読み込んでよい配信元（Spotify / Apple / Cover Art Archive） */
-const ARTWORK_HOSTS = [/(^|\.)scdn\.co$/, /\.mzstatic\.com$/, /^coverartarchive\.org$/];
+const ARTWORK_HOSTS = [/(^|\.)scdn\.co$/, /\.spotifycdn\.com$/, /\.mzstatic\.com$/, /^coverartarchive\.org$/];
 
 const SPOTIFY_ID = /^[A-Za-z0-9]{22}$/;
 const MB_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
