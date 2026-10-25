@@ -30,7 +30,7 @@ export default function HomePage() {
     <main className="flex flex-1 flex-col px-6 pb-10 pt-16">
       <h1 className="font-display text-[42px] leading-none text-accent">Musiconnect</h1>
       <p className="mt-5 text-[22px] font-bold leading-snug">
-        共通の一曲が、
+        共通の好みの曲が、
         <br />
         心を繋ぐ。
       </p>
