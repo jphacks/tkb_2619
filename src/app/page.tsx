@@ -78,7 +78,7 @@ export default function HomePage() {
 
       {roomBackend.kind === "local" && (
         <p className="mt-6 rounded-xl bg-crown-soft px-4 py-3 text-[12px] leading-relaxed text-ink/80">
-          デモモード: 共有サーバー（Supabase）が未設定のため、ルームはこの端末のブラウザ内だけで共有されます。
+          ローカルモード: 共有サーバー（Supabase）が未設定のため、ルームはこの端末のブラウザ内だけで共有されます。
         </p>
       )}
     </main>

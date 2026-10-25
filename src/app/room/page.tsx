@@ -11,14 +11,12 @@ import InviteQr from "@/components/InviteQr";
 import AiPicksPanel from "@/components/AiPicksPanel";
 import { roomBackend } from "@/lib/room";
 import { BASE_PATH } from "@/lib/config";
-import { addDemoMembers } from "@/lib/demo";
 import { AGE_GROUPS, GENDERS, GENRES, NATIONALITIES } from "@/types";
 
 export default function RoomHubPage() {
-  const { roomId, snapshot, me, isHost } = useRoom();
+  const { roomId, snapshot, me } = useRoom();
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(false);
-  const [demoState, setDemoState] = useState<"idle" | "adding" | "done">("idle");
   const { room, members } = snapshot;
   const c = room.conditions;
 
@@ -38,16 +36,6 @@ export default function RoomHubPage() {
     await navigator.clipboard.writeText(`${window.location.origin}${BASE_PATH}/join?room=${roomId}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const addDemo = async () => {
-    setDemoState("adding");
-    try {
-      await addDemoMembers(roomId);
-      setDemoState("done");
-    } catch {
-      setDemoState("idle");
-    }
   };
 
   return (
@@ -100,20 +88,9 @@ export default function RoomHubPage() {
           </p>
         </section>
 
-        {isHost && (
-          <button
-            type="button"
-            onClick={addDemo}
-            disabled={demoState !== "idle"}
-            className="flex items-center justify-center gap-1.5 py-2 text-[12px] text-muted underline disabled:no-underline"
-          >
-            {demoState === "adding" ? "デモ用メンバーを追加中…" : demoState === "done" ? "デモ用メンバーを追加しました" : "デモ用に5人追加する（発表用）"}
-          </button>
-        )}
-
         {roomBackend.kind === "local" && (
           <p className="rounded-xl bg-crown-soft px-4 py-3 text-[12px] leading-relaxed text-ink/80">
-            デモモード: Supabase未設定のため、このルームはこの端末のブラウザ内だけで共有されます。
+            ローカルモード: Supabase未設定のため、このルームはこの端末のブラウザ内だけで共有されます。
           </p>
         )}
       </main>

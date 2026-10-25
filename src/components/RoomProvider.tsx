@@ -158,7 +158,7 @@ export default function RoomProvider({ children }: { children: React.ReactNode }
         title="ルームが見つかりません"
         body={
           roomBackend.kind === "local"
-            ? "いまはデモモード（この端末のブラウザ内だけで共有）です。別の端末で作ったルームには参加できません。"
+            ? "いまはローカルモード（この端末のブラウザ内だけで共有）です。別の端末で作ったルームには参加できません。"
             : "招待URLが正しいか確認してください。"
         }
       />

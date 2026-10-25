@@ -33,7 +33,7 @@ export type NewCandidate = Omit<CandidateEntry, "addedAt">;
 /**
  * ルームの共有データ（参加者・候補曲・投票）の保存先。
  * - supabase.ts: 招待URLで複数の端末から参加し、リアルタイムに共有する本番用
- * - local.ts: Supabase未設定時のデモ用（同じブラウザ内のタブ間だけで共有）
+ * - local.ts: Supabase未設定時のローカル用（同じブラウザ内のタブ間だけで共有）
  */
 export interface RoomBackend {
   readonly kind: "supabase" | "local";

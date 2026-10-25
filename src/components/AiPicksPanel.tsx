@@ -84,7 +84,7 @@ export default function AiPicksPanel() {
         </p>
       )}
       {!available && isHost && (
-        <p className="mt-2 text-[12px] text-muted">デモモードなので、AIの代わりに条件に合う曲を選んでいます</p>
+        <p className="mt-2 text-[12px] text-muted">ローカルモードなので、AIの代わりに条件に合う曲を選んでいます</p>
       )}
     </section>
   );
