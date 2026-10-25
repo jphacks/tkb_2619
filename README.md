@@ -37,7 +37,11 @@
 2. **URLから参加**: Spotify と連携するか、アカウントなしで参加
 3. **曲の候補が集まる**: みんなが最近よく聴いている曲の「被り」、自分で検索して追加した曲、AIのおすすめ
 4. **スワイプで投票**: 多くの人と被った曲から順に、上下左右のスワイプで評価
-5. **ランキングで決める**: 投票のたびに順位が入れ替わり、最後は幹事が1曲を選んで Spotify で再生
+5. **ランキングで決める**: 投票のたびに順位が入れ替わり、1位から順に試聴しながら、最後は幹事が次に流す曲を決める
+
+| 1. ルームを作る | 2. URLから参加 | 3. 曲の候補が集まる | 4. スワイプで投票 | 5. ランキングで決める |
+| :---: | :---: | :---: | :---: | :---: |
+| <img src="docs/images/steps/step1-create.png" width="160" alt="ルーム作成画面。ジャンル・国籍・年代を複数選んでいる" /> | <img src="docs/images/steps/step2-join.png" width="160" alt="参加画面。名前を入れて、Spotifyと連携するかSpotifyなしで参加する" /> | <img src="docs/images/steps/step3-room.png" width="160" alt="ルーム画面。参加者6人と、AIが候補に入れた曲が表示されている" /> | <img src="docs/images/steps/step4-vote.png" width="160" alt="投票画面。4人が投稿した曲のカードと、4段階の評価ボタン" /> | <img src="docs/images/steps/step5-results.png" width="160" alt="投票結果画面。6人の投票によるランキングと、1位から流すボタン" /> |
 
 ここまでの流れは、[公開サイト](https://jphacks.github.io/tkb_2619/)で実際に動かせます。
 
