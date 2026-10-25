@@ -116,17 +116,31 @@ export function buildCandidatePool(snapshot: RoomSnapshot, aiRecommendations: Re
   return items.sort((a, b) => b.preScore - a.preScore || b.memberIds.length - a.memberIds.length);
 }
 
+/** 投票で混ぜる曲の種類。3枚ごとにこの順で並べる（投稿 → データ由来 → AIおすすめ） */
+type DeckLane = "post" | "data" | "ai";
+const DECK_PATTERN: DeckLane[] = ["post", "data", "ai"];
+
+/** 投稿もしていて聴いてもいる曲は、数の少ない「投稿」として扱う */
+const laneOf = (item: PoolItem): DeckLane => (item.fromManual ? "post" : item.fromSpotify ? "data" : "ai");
+
 /**
  * スワイプ投票に回す曲。候補は件数を絞らず全部出す（途中で投票が途切れないように）。
- * 2人以上が持ち込んで被っている曲を最初に、被った人数の多い順に出す（議事録「被る好みの反映」）。
- * 次に、誰かが持ち込んだ曲（投稿・Spotify）を、AI・カタログだけのおすすめより先に出す。
- * 候補ランキングの点ではAIおすすめの方が高くなることがあり、あとから投稿された曲が何十枚も後ろに埋もれてしまうため。
- * それぞれの中は候補ランキングの順のまま。
+ * 「投稿」「データ由来（Spotifyでよく聴く曲）」「AIおすすめ」を順番に1枚ずつ混ぜて、どれかに偏らないようにする。
+ * 投稿は数が少なく埋もれやすいので、3枚に1枚は必ず投稿にする（投稿 → データ → AI の繰り返し）。
+ * 種類ごとの中では、被った人数の多い曲を先に（議事録「被る好みの反映」）、あとは候補ランキングの順。
+ * ある種類が尽きたら、その種類を飛ばして残りの種類で順番に回す（同じ種類が続きにくいように）。
  */
 export function voteDeck(pool: PoolItem[]): PoolItem[] {
   const shared = (item: PoolItem) => (item.memberIds.length >= 2 ? item.memberIds.length : 0);
-  const brought = (item: PoolItem) => (item.memberIds.length > 0 ? 1 : 0);
-  return [...pool].sort((a, b) => shared(b) - shared(a) || brought(b) - brought(a));
+  const lanes: Record<DeckLane, PoolItem[]> = { post: [], data: [], ai: [] };
+  for (const item of [...pool].sort((a, b) => shared(b) - shared(a))) lanes[laneOf(item)].push(item);
+
+  const deck: PoolItem[] = [];
+  for (let turn = 0; deck.length < pool.length; turn++) {
+    const next = lanes[DECK_PATTERN[turn % DECK_PATTERN.length]].shift();
+    if (next) deck.push(next);
+  }
+  return deck;
 }
 
 /** 投票は代表曲のIDに付くが、同じ曲の別IDへの投票もまとめて数える */
