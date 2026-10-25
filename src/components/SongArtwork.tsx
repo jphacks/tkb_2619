@@ -14,7 +14,7 @@ const MAX_RETRIES = 2;
  * Cover Art Archive（archive.org）は応答が遅く、一度に読むとタイムアウトすることがあるため、
  * 読み込めるまでは色付きの代替表示を出し、失敗したら少し待って再試行する。
  */
-export default function SongArtwork({ song, className = "" }: { song: Song; className?: string }) {
+export default function SongArtwork({ song, className = "", large = false }: { song: Song; className?: string; large?: boolean }) {
   const key = normalizeKey(song);
   const [lookedUp, setLookedUp] = useState<{ key: string; url: string | null } | null>(null);
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
@@ -33,7 +33,9 @@ export default function SongArtwork({ song, className = "" }: { song: Song; clas
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, song.artworkUrl]);
 
-  const url = song.artworkUrl ?? (lookedUp?.key === key ? lookedUp.url : null);
+  const baseUrl = song.artworkUrl ?? (lookedUp?.key === key ? lookedUp.url : null);
+  // 投票カードのように大きく出すときは、Apple の画像を高解像度で取り直す（小さい画像を引き伸ばすとぼやけるため）
+  const url = large && baseUrl ? baseUrl.replace(/\/\d+x\d+bb\./, "/600x600bb.") : baseUrl;
   const failCount = url && failures?.url === url ? failures.count : 0;
   const loaded = url !== null && loadedUrl === url;
 

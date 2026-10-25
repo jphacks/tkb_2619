@@ -44,7 +44,7 @@ export default function AiPicksPanel() {
 
   const picks = room.aiPicks;
   return (
-    <section className="rounded-2xl bg-surface p-4">
+    <section className="border-t border-line pt-4">
       <div className="flex items-center justify-between gap-3">
         <p className="flex items-center gap-1.5 text-[14px] font-bold">
           <Sparkles size={16} className="text-accent" />
@@ -64,7 +64,7 @@ export default function AiPicksPanel() {
       </div>
 
       {status.kind === "loading" ? (
-        <p className="mt-2 text-[13px] text-muted">AIがみんなの好みから選曲中…（混んでいると1分ほどかかります）</p>
+        <p className="mt-2 text-[13px] text-muted">AIが選曲中…</p>
       ) : picks.length > 0 ? (
         <>
           <p className="mt-2 text-[13px] leading-relaxed">
@@ -74,21 +74,20 @@ export default function AiPicksPanel() {
               .join("、")}
             {picks.length > 3 && ` ほか${picks.length - 3}曲`}を候補に入れました
           </p>
-          {isHost && <p className="mt-1 text-[11px] text-muted">人が増えたら「AIに聞き直す」で、みんなの好みに合わせて選び直せます</p>}
         </>
       ) : (
         <p className="mt-2 text-[13px] text-muted">
-          {isHost ? "まだAIに聞いていません" : "幹事がAIに聞くと、ここにおすすめが表示されます"}
+          {isHost ? "まだAIに聞いてない" : "幹事がAIに聞くと、ここに出るよ"}
         </p>
       )}
 
       {status.kind === "error" && (
         <p className="mt-2 text-[12px] leading-relaxed text-heart">
-          AIを使えませんでした（{status.message}）。条件に合う曲をルールで選んで候補に入れています。
+          AIにつながらなかったので、条件に合う曲を選んでおきました（{status.message}）
         </p>
       )}
       {!available && isHost && (
-        <p className="mt-2 text-[12px] text-muted">デモモードではAIは使えません。条件に合う曲をルールで選んでいます。</p>
+        <p className="mt-2 text-[12px] text-muted">デモモードなので、AIの代わりに条件に合う曲を選んでいます</p>
       )}
     </section>
   );
