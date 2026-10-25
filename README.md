@@ -1,4 +1,4 @@
-# [ミューコネ（MusiConnect）](https://jphacks.github.io/tkb_2619/)
+# [ミューコネ（Musiconnect）](https://jphacks.github.io/tkb_2619/)
 
 音楽で心をコネクト。ミューコネなら世代も国籍も好みも違うみんなで、スワイプ投票しながら「いま流す1曲」を見つけられる。
 
