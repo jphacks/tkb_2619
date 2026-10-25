@@ -7,7 +7,8 @@ import { canonicalArtist, normalizeKey } from "./normalize";
  * - 見つからなかった結果も含めて端末に覚えておき、同じ曲を何度も検索しない（iTunes は1分あたりの回数に上限がある）
  */
 
-const CACHE_KEY = "musicconnect-preview-v1";
+// v2: アーティスト名のカタカナ表記に対応した。以前「見つからない」と保存した結果は使わない
+const CACHE_KEY = "musicconnect-preview-v2";
 const memory = new Map<string, string | null>();
 const inflight = new Map<string, Promise<string | null>>();
 
@@ -65,8 +66,11 @@ async function find(song: Song): Promise<string | null> {
     limit: "10",
     lang: "ja_jp",
   });
-  const results = await fetchResults(`https://itunes.apple.com/search?${params}`);
-  return results.find((r) => r.previewUrl && matches(r, song))?.previewUrl ?? null;
+  const results = (await fetchResults(`https://itunes.apple.com/search?${params}`)).filter((r) => r.previewUrl);
+  // 日本のストアでは海外アーティストがカタカナ表記（Queen → クイーン）になるため、
+  // アーティスト名が一致しなくても、曲名が完全に同じなら採用する（検索語にアーティスト名を入れているので、上位はほぼ本人）
+  const exact = results.find((r) => matches(r, song)) ?? results.find((r) => loose(r.trackName) === loose(song.title));
+  return exact?.previewUrl ?? null;
 }
 
 /** 試聴音源のURL。見つからなければ null */

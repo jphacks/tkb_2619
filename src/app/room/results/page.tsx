@@ -84,7 +84,10 @@ export default function ResultsPage() {
           )}
         </div>
 
-        <FinalSongBanner />
+        <FinalSongBanner
+          playingKey={player.playing ? player.nowKey : null}
+          onPlay={(key) => (player.nowKey === key ? player.toggle() : player.playFrom(key))}
+        />
 
         {ranking.length === 0 ? (
           <p className="py-16 text-center text-[14px] text-muted">まだ候補がないみたい</p>
@@ -155,21 +158,36 @@ export default function ResultsPage() {
                           href={spotifyOpenUrl(item.song)}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center gap-1 rounded-lg border border-line bg-surface px-2.5 py-1.5 font-bold"
+                          className="flex items-center gap-1 rounded-lg border border-line px-2.5 py-1.5 font-bold"
                         >
                           <ExternalLink size={13} />
-                          Spotify
+                          Spotifyで聴く
                         </a>
-                        {isHost && (
-                          <button
-                            type="button"
-                            onClick={() => roomBackend.setFinalSong(roomId, isFinal ? null : item.song.id)}
-                            className="flex items-center gap-1 rounded-lg bg-accent px-2.5 py-1.5 font-bold text-on-accent"
-                          >
-                            {isFinal ? <Check size={13} /> : <Play size={13} fill="currentColor" />}
-                            {isFinal ? "選択中（解除）" : "この曲を流す"}
-                          </button>
-                        )}
+                        {/* 幹事だけが「次に流す曲」を決められる。決めた曲は全員の画面の上に出る */}
+                        {isHost &&
+                          (isFinal ? (
+                            <>
+                              <span className="flex items-center gap-1 rounded-lg bg-accent-soft px-2.5 py-1.5 font-bold text-accent">
+                                <Check size={13} />
+                                次に流す曲
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => roomBackend.setFinalSong(roomId, null)}
+                                className="px-1.5 py-1.5 text-muted underline"
+                              >
+                                取り消す
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => roomBackend.setFinalSong(roomId, item.song.id)}
+                              className="rounded-lg bg-accent px-2.5 py-1.5 font-bold text-on-accent"
+                            >
+                              次に流す曲に決める
+                            </button>
+                          ))}
                       </div>
                     )}
                   </li>

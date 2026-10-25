@@ -7,9 +7,9 @@ import { TabBar, primaryButton } from "@/components/ui";
 import { useRoom } from "@/components/RoomProvider";
 import VoteCard, { type SourceLine } from "@/components/VoteCard";
 import SwipeReaction, { type Reaction } from "@/components/SwipeReaction";
+import { usePrefetchPreviews, useSongPreview } from "@/components/useSongPreview";
 import { roomBackend } from "@/lib/room";
 import { myVoteFor, type PoolItem } from "@/lib/logic/ranking";
-import { spotifyOpenUrl } from "@/lib/music-source/spotify";
 import { SWIPE_SCORES, type CandidateEntry, type Member, type SwipeDirection, type VoteScore } from "@/types";
 
 // 評価ごとに色を分けて、ひと目でどれを押すか分かるようにする（色は配色テーマの評価色に連動）
@@ -46,7 +46,7 @@ export default function VotePage() {
   const [localUndone, setLocalUndone] = useState<Set<string>>(new Set());
   const [history, setHistory] = useState<PoolItem[]>([]);
   const [forced, setForced] = useState<SwipeDirection | null>(null);
-  const [playing, setPlaying] = useState<string | null>(null);
+  const preview = useSongPreview();
   const [reaction, setReaction] = useState<Reaction | null>(null);
   const reactionId = useRef(0);
 
@@ -65,7 +65,7 @@ export default function VotePage() {
 
   const commit = (item: PoolItem, score: VoteScore | null) => {
     setForced(null);
-    setPlaying(null);
+    preview.stop();
     setLocalVoted((s) => new Set(s).add(item.key));
     setLocalUndone((s) => {
       const next = new Set(s);
@@ -100,10 +100,8 @@ export default function VotePage() {
     void roomBackend.deleteVote(roomId, me.id, vote?.songId ?? last.song.id);
   };
 
-  const play = (item: PoolItem) => {
-    if (item.song.spotifyId) setPlaying((p) => (p === item.key ? null : item.key));
-    else window.open(spotifyOpenUrl(item.song), "_blank", "noopener");
-  };
+  // 今のカードと次のカードの試聴を先に探しておき、▶をタップした瞬間に流せるようにする
+  usePrefetchPreviews(remaining.slice(0, 2).map((item) => item.song));
 
   return (
     <>
@@ -147,7 +145,7 @@ export default function VotePage() {
                 song={current.song}
                 sources={sourceLines(current, snapshot.candidates, snapshot.members, me.id)}
                 forced={forced}
-                onPlay={() => play(current)}
+                onPlay={() => void preview.toggle(current.key, current.song)}
                 onDone={(direction) => {
                   react(direction);
                   commit(current, SWIPE_SCORES[direction].score);
@@ -157,15 +155,6 @@ export default function VotePage() {
             {/* スワイプの向きは、最初の1曲を評価するまでだけ出す */}
             {history.length === 0 && doneCount === 0 && (
               <p className="mt-3 text-center text-[12px] text-muted">↑ Best　→ Better　↓ So-so　← Nope</p>
-            )}
-
-            {playing === current.key && current.song.spotifyId && (
-              <iframe
-                title="Spotifyで試聴"
-                src={`https://open.spotify.com/embed/track/${current.song.spotifyId}?theme=0`}
-                className="mt-3 h-20 w-full rounded-xl border-0"
-                allow="autoplay; clipboard-write; encrypted-media"
-              />
             )}
 
             <div className="mt-5 grid grid-cols-4 gap-2">
