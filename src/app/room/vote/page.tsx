@@ -60,7 +60,10 @@ export default function VotePage() {
   const isDone = (item: PoolItem) =>
     localVoted.has(item.key) || (!localUndone.has(item.key) && Boolean(myVoteFor(item, snapshot.votes, me.id)));
   const remaining = deck.filter((item) => !isDone(item));
-  const current = remaining[0] ?? null;
+  // 新しい曲が届いて山札の並びが変わっても、いま見ているカードは差し替えない（評価したら新しい並びの先頭へ）
+  const [shownKey, setShownKey] = useState<string | null>(null);
+  const current = remaining.find((item) => item.key === shownKey) ?? remaining[0] ?? null;
+  if ((current?.key ?? null) !== shownKey) setShownKey(current?.key ?? null);
   const doneCount = deck.length - remaining.length;
 
   const commit = (item: PoolItem, score: VoteScore | null) => {

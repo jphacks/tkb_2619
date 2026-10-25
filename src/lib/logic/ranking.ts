@@ -119,11 +119,14 @@ export function buildCandidatePool(snapshot: RoomSnapshot, aiRecommendations: Re
 /**
  * スワイプ投票に回す曲。候補は件数を絞らず全部出す（途中で投票が途切れないように）。
  * 2人以上が持ち込んで被っている曲を最初に、被った人数の多い順に出す（議事録「被る好みの反映」）。
- * それ以外は候補ランキングの順のまま。1人がよく聴いているだけの曲が、被った曲より先に来ないようにする
+ * 次に、誰かが持ち込んだ曲（投稿・Spotify）を、AI・カタログだけのおすすめより先に出す。
+ * 候補ランキングの点ではAIおすすめの方が高くなることがあり、あとから投稿された曲が何十枚も後ろに埋もれてしまうため。
+ * それぞれの中は候補ランキングの順のまま。
  */
 export function voteDeck(pool: PoolItem[]): PoolItem[] {
   const shared = (item: PoolItem) => (item.memberIds.length >= 2 ? item.memberIds.length : 0);
-  return [...pool].sort((a, b) => shared(b) - shared(a));
+  const brought = (item: PoolItem) => (item.memberIds.length > 0 ? 1 : 0);
+  return [...pool].sort((a, b) => shared(b) - shared(a) || brought(b) - brought(a));
 }
 
 /** 投票は代表曲のIDに付くが、同じ曲の別IDへの投票もまとめて数える */
