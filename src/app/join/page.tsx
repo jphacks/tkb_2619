@@ -3,9 +3,9 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AppHeader, outlineButton, primaryButton, Spinner, SpotifyLogo, spotifyButton } from "@/components/ui";
+import { AppHeader, outlineButton, Spinner, SpotifyLogo, spotifyButton } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
-import { saveIdentity, useRoomIdentity } from "@/lib/room/identity";
+import { getSavedName, saveIdentity, saveName, useRoomIdentity } from "@/lib/room/identity";
 import { startSpotifyLogin } from "@/lib/music-source/spotify";
 import type { RoomSnapshot } from "@/types";
 
@@ -14,8 +14,9 @@ function JoinRoom() {
   const roomId = useSearchParams().get("room");
   const identity = useRoomIdentity(roomId);
   const [loaded, setLoaded] = useState<{ roomId: string; snapshot: RoomSnapshot | null } | null>(null);
-  const [mode, setMode] = useState<"choose" | "guest">("choose");
-  const [name, setName] = useState("");
+  // 名前は最初に入れてもらい、前回の名前があれば最初から入れておく
+  const [name, setName] = useState(getSavedName);
+  const trimmedName = name.trim();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,11 +40,12 @@ function JoinRoom() {
   }, [alreadyJoined, roomId, router]);
 
   const joinAsGuest = async () => {
-    if (!roomId || !name.trim()) return;
+    if (!roomId || !trimmedName) return;
     setBusy(true);
     setError(null);
+    saveName(trimmedName);
     try {
-      const member = await roomBackend.joinRoom(roomId, { name: name.trim(), kind: "guest" });
+      const member = await roomBackend.joinRoom(roomId, { name: trimmedName, kind: "guest" });
       saveIdentity(roomId, { memberId: member.id });
       if (identity?.isHost) await roomBackend.setHost(roomId, member.id);
       router.replace(`/room?room=${roomId}`);
@@ -53,10 +55,12 @@ function JoinRoom() {
     }
   };
 
+  // Spotifyから戻ってきた後の参加処理（callback）でも、この名前を使う
   const joinWithSpotify = async () => {
-    if (!roomId) return;
+    if (!roomId || !trimmedName) return;
     setBusy(true);
     setError(null);
+    saveName(trimmedName);
     try {
       await startSpotifyLogin({ roomId });
     } catch {
@@ -96,38 +100,30 @@ function JoinRoom() {
             {snapshot.members.length > 0 ? `${snapshot.members.length}人が参加中` : "最初の参加者です"}
           </p>
 
-          {mode === "choose" ? (
-            <div className="mt-8 flex w-full flex-col gap-3">
-              <button type="button" onClick={joinWithSpotify} disabled={busy} className={spotifyButton}>
-                <SpotifyLogo />
-                {busy ? "Spotifyに移動中…" : "Spotifyで登録・連携"}
-              </button>
-              <button type="button" onClick={() => setMode("guest")} disabled={busy} className={outlineButton}>
-                Spotifyなしで参加
-              </button>
-              <p className="mt-2 text-[12px] text-muted">連携すると、最近よく聴いてる曲がみんなの候補に入るよ</p>
-            </div>
-          ) : (
-            <div className="mt-8 flex w-full flex-col gap-3 text-left">
-              <label className="text-[14px] font-bold">
-                ニックネーム
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="例: たろう"
-                  maxLength={20}
-                  autoFocus
-                  className="mt-1.5 w-full rounded-xl border border-line bg-app px-4 py-3 text-[16px] font-normal outline-none focus:border-accent"
-                />
-              </label>
-              <button type="button" onClick={joinAsGuest} disabled={busy || !name.trim()} className={primaryButton}>
-                {busy ? "参加中…" : "参加する"}
-              </button>
-              <button type="button" onClick={() => setMode("choose")} className="text-[13px] text-muted underline">
-                戻る
-              </button>
-            </div>
-          )}
+          <label className="mt-8 w-full text-left text-[14px] font-bold">
+            名前
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="例: たろう"
+              maxLength={20}
+              autoFocus={!name}
+              enterKeyHint="done"
+              className="mt-1.5 w-full rounded-xl border border-line bg-app px-4 py-3 text-[16px] font-normal outline-none focus:border-accent"
+            />
+            <span className="mt-1.5 block text-[12px] font-normal text-muted">ルームのみんなに表示されます</span>
+          </label>
+
+          <div className="mt-6 flex w-full flex-col gap-3">
+            <button type="button" onClick={joinWithSpotify} disabled={busy || !trimmedName} className={spotifyButton}>
+              <SpotifyLogo />
+              {busy ? "参加中…" : "Spotifyと連携して参加"}
+            </button>
+            <button type="button" onClick={joinAsGuest} disabled={busy || !trimmedName} className={outlineButton}>
+              Spotifyなしで参加
+            </button>
+            <p className="mt-2 text-[12px] text-muted">連携すると、最近よく聴いてる曲がみんなの候補に入るよ</p>
+          </div>
           {error && <p className="mt-4 text-[13px] text-heart">{error}</p>}
         </section>
       </main>

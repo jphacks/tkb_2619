@@ -52,3 +52,22 @@ export function useRoomIdentity(roomId: string | null): RoomIdentity | null | un
     () => undefined
   );
 }
+
+/** 参加時に入力した名前。次のルームでも入力欄に最初から入れておく（ルームをまたいで端末に1つ） */
+const NAME_KEY = "musicconnect-name-v1";
+
+export function getSavedName(): string {
+  try {
+    return localStorage.getItem(NAME_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+export function saveName(name: string) {
+  try {
+    localStorage.setItem(NAME_KEY, name);
+  } catch {
+    // 保存できなくても参加はできる
+  }
+}
