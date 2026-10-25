@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
 @theme inline {
-  --font-sans: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
-  /* アプリ名と大きな見出しだけに使う、ライブのフライヤーのような太い書体 */
-  --font-display: "Dela Gothic One", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  /* 端末の標準フォント（iPhone はヒラギノ、Android は端末のフォント）。ネイティブアプリと同じ見た目にする */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Segoe UI", "Yu Gothic UI", Meiryo, sans-serif;
+  /* ロゴ（アプリ名）と評価リアクションの英字だけに使う太い書体。見出しや本文には使わない */
+  --font-display: "Dela Gothic One", var(--font-sans);
 
   /* テーマ「ナイト」: こげ茶の夜にオレンジが灯る */
   --color-cream: #140d0a;

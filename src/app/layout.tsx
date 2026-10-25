@@ -17,13 +17,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ja" className="h-full antialiased">
       <head>
-        {/* 日本語フォントはサブセットが多くビルド時の取得が不安定なため、ブラウザから直接読み込む */}
+        {/* 本文は端末の標準フォント。ロゴ用の書体だけ、使う英字に絞ってブラウザから読み込む */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&text=MusicontBrNpSe-%21&display=swap"
         />
       </head>
       <body className="min-h-full">
