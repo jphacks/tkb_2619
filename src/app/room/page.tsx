@@ -7,6 +7,7 @@ import { AppHeader, TabBar, primaryButton } from "@/components/ui";
 import { useRoom } from "@/components/RoomProvider";
 import FinalSongBanner from "@/components/FinalSongBanner";
 import MemberAvatar from "@/components/MemberAvatar";
+import InviteQr from "@/components/InviteQr";
 import AiPicksPanel from "@/components/AiPicksPanel";
 import { roomBackend } from "@/lib/room";
 import { BASE_PATH } from "@/lib/config";
@@ -16,6 +17,7 @@ import { AGE_GROUPS, GENDERS, GENRES, NATIONALITIES } from "@/types";
 export default function RoomHubPage() {
   const { roomId, snapshot, me, isHost } = useRoom();
   const [copied, setCopied] = useState(false);
+  const [showQr, setShowQr] = useState(false);
   const [demoState, setDemoState] = useState<"idle" | "adding" | "done">("idle");
   const { room, members } = snapshot;
   const c = room.conditions;
@@ -77,11 +79,21 @@ export default function RoomHubPage() {
         <section className="border-t border-line pt-4 text-[13px]">
           <div className="flex items-center justify-between gap-3">
             <span className="text-muted">友だちを呼ぶ</span>
-            <button type="button" onClick={copyInvite} className="flex items-center gap-1 font-bold text-accent">
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? "コピーしました" : "招待URLをコピー"}
-            </button>
+            <span className="flex items-center gap-4">
+              <button type="button" onClick={() => setShowQr((v) => !v)} className="font-bold text-accent">
+                {showQr ? "QRを閉じる" : "QRコード"}
+              </button>
+              <button type="button" onClick={copyInvite} className="flex items-center gap-1 font-bold text-accent">
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? "コピーしました" : "招待URLをコピー"}
+              </button>
+            </span>
           </div>
+          {showQr && (
+            <div className="mt-4">
+              <InviteQr url={`${window.location.origin}${BASE_PATH}/join?room=${roomId}`} roomId={roomId} size={200} />
+            </div>
+          )}
           <p className="mt-3 text-muted">
             おすすめ曲の提案: {room.aiEnabled ? "ON" : "OFF"}
             {room.aiEnabled && conditionText && `（${conditionText}）`}
