@@ -7,6 +7,10 @@
 - **アプリURL**: https://jphacks.github.io/tkb_2619/
 <!-- デモ動画・発表スライドのURLができたらここに追加する -->
 
+### アプリ QR コード
+
+<img src="docs/images/qr.png" width="200" alt="ミューコネのアプリURL（https://jphacks.github.io/tkb_2619/）を開くQRコード" />
+
 > [!TIP]
 > スマートフォンでのアクセスがおすすめです。招待URLを開くだけで、アカウントなしでも参加できます。
 
