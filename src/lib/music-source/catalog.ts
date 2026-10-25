@@ -21,6 +21,8 @@ type Entry = [
 
 const ENTRIES: Entry[] = [
   ["怪獣の花唄", "Vaundy", "rock", 2020, ["JP"], 88, ["upbeat", "singalong"], "male"],
+  ["好きすぎて滅!", "M!LK", "jpop", 2025, ["JP"], 82, ["upbeat", "romantic"], "male"],
+  ["もう恋なんてしない", "槇原敬之", "jpop", 1992, ["JP"], 80, ["nostalgic", "emotional", "singalong"], "male"],
   ["チェリー", "スピッツ", "rock", 1996, ["JP"], 85, ["nostalgic", "singalong", "romantic"], "male"],
   ["空も飛べるはず", "スピッツ", "rock", 1994, ["JP"], 75, ["nostalgic", "emotional"], "male"],
   ["新宝島", "サカナクション", "rock", 2015, ["JP"], 82, ["upbeat"], "male"],

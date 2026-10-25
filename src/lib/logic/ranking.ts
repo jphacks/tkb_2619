@@ -122,11 +122,16 @@ export function buildCandidatePool(snapshot: RoomSnapshot, aiRecommendations: Re
  * 次に、誰かが持ち込んだ曲（投稿・Spotify）を、AI・カタログだけのおすすめより先に出す。
  * 候補ランキングの点ではAIおすすめの方が高くなることがあり、あとから投稿された曲が何十枚も後ろに埋もれてしまうため。
  * それぞれの中は候補ランキングの順のまま。
+ * firstKeys に指定した曲（デモ用）は、その順で一番最初に出す。
  */
-export function voteDeck(pool: PoolItem[]): PoolItem[] {
+export function voteDeck(pool: PoolItem[], firstKeys: string[] = []): PoolItem[] {
+  const pinned = (item: PoolItem) => {
+    const i = firstKeys.indexOf(item.key);
+    return i < 0 ? firstKeys.length : i;
+  };
   const shared = (item: PoolItem) => (item.memberIds.length >= 2 ? item.memberIds.length : 0);
   const brought = (item: PoolItem) => (item.memberIds.length > 0 ? 1 : 0);
-  return [...pool].sort((a, b) => shared(b) - shared(a) || brought(b) - brought(a));
+  return [...pool].sort((a, b) => pinned(a) - pinned(b) || shared(b) - shared(a) || brought(b) - brought(a));
 }
 
 /** 投票は代表曲のIDに付くが、同じ曲の別IDへの投票もまとめて数える */

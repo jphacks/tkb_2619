@@ -11,6 +11,7 @@ import { applyArtistMeta, lookupArtistMeta } from "@/lib/music-source/musicbrain
 import { canonicalArtist } from "@/lib/music-source/normalize";
 import { recommendForRoom, type Recommendation } from "@/lib/logic/recommend";
 import { buildCandidatePool, rankWithVotes, voteDeck, type PoolItem, type RankedItem } from "@/lib/logic/ranking";
+import { demoDeckOrder } from "@/lib/demo";
 import { Spinner } from "./ui";
 
 export interface RoomView {
@@ -144,7 +145,7 @@ export default function RoomProvider({ children }: { children: React.ReactNode }
       isHost: snapshot.room.hostMemberId === me.id || Boolean(identity?.isHost),
       aiRecommendations,
       pool,
-      deck: voteDeck(pool),
+      deck: voteDeck(pool, demoDeckOrder(snapshot)),
       ranking: rankWithVotes(pool, snapshot.votes),
       updatedAt: state.updatedAt,
       refresh,
