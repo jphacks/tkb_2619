@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, SkipForward, Undo2 } from "lucide-react";
 import { TabBar, outlineButton, primaryButton } from "@/components/ui";
 import { useRoom } from "@/components/RoomProvider";
-import VoteCard from "@/components/VoteCard";
+import VoteCard, { type SourceLine } from "@/components/VoteCard";
+import SwipeReaction, { type Reaction } from "@/components/SwipeReaction";
 import { roomBackend } from "@/lib/room";
 import { myVoteFor, type PoolItem } from "@/lib/logic/ranking";
 import { spotifyOpenUrl } from "@/lib/music-source/spotify";
-import { SWIPE_SCORES, type SwipeDirection, type VoteScore } from "@/types";
+import { SWIPE_SCORES, type CandidateEntry, type Member, type SwipeDirection, type VoteScore } from "@/types";
 
 const SCORE_BUTTONS: { score: VoteScore; label: string; className: string; direction: SwipeDirection }[] = [
   { score: 0, label: "Nope", className: "bg-no-soft text-no", direction: "left" },
@@ -36,6 +37,25 @@ function DirectionLabel({ direction }: { direction: SwipeDirection }) {
   );
 }
 
+/**
+ * 吹き出しに出す「この曲がどこから来たか」。誰かが聴いている曲 → 誰かの投稿 → AIレコメンド の順に最大2行。
+ * 同じ人が聴いていて投稿もしている場合は「聴いてる」だけを出す。
+ */
+function sourceLines(item: PoolItem, candidates: CandidateEntry[], members: Member[], myId: string): SourceLine[] {
+  const nameOf = (id: string) => (id === myId ? "あなた" : (members.find((m) => m.id === id)?.name ?? "だれか"));
+  const who = (ids: string[]) => (ids.length <= 2 ? ids.map(nameOf).join("と") : `${nameOf(ids[0])}たち${ids.length}人`);
+  const entries = candidates.filter((c) => item.songIds.includes(c.songId));
+  const listeners = [...new Set(entries.filter((c) => c.source === "spotify").map((c) => c.memberId))];
+  const posters = [...new Set(entries.filter((c) => c.source === "manual").map((c) => c.memberId))].filter(
+    (id) => !listeners.includes(id)
+  );
+  const lines: SourceLine[] = [];
+  if (listeners.length > 0) lines.push({ who: who(listeners), text: "が聴いてるよ！" });
+  if (posters.length > 0) lines.push({ who: who(posters), text: "の投稿" });
+  if (lines.length === 0 && item.ai) lines.push({ text: "AIレコメンド" });
+  return lines.slice(0, 2);
+}
+
 export default function VotePage() {
   const { roomId, snapshot, me, deck } = useRoom();
   // サーバーに反映されるまでの間も次の曲へ進めるよう、手元でも評価済み・取り消し済みを覚えておく
@@ -44,6 +64,15 @@ export default function VotePage() {
   const [history, setHistory] = useState<PoolItem[]>([]);
   const [forced, setForced] = useState<SwipeDirection | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
+  const [reaction, setReaction] = useState<Reaction | null>(null);
+  const reactionId = useRef(0);
+
+  // 評価した直後に「Better!」などを大きく出して、少ししたら消す
+  const react = (direction: SwipeDirection) => {
+    const id = ++reactionId.current;
+    setReaction({ id, direction });
+    setTimeout(() => setReaction((r) => (r?.id === id ? null : r)), 700);
+  };
 
   const isDone = (item: PoolItem) =>
     localVoted.has(item.key) || (!localUndone.has(item.key) && Boolean(myVoteFor(item, snapshot.votes, me.id)));
@@ -95,7 +124,8 @@ export default function VotePage() {
 
   return (
     <>
-      <main className="flex flex-1 flex-col px-4 pb-4 pt-6">
+      <main className="relative flex flex-1 flex-col px-4 pb-4 pt-6">
+        <SwipeReaction reaction={reaction} />
         <h1 className="text-center font-display text-[24px] leading-tight">この曲、聴きたい？</h1>
 
         {deck.length === 0 ? (
@@ -142,9 +172,13 @@ export default function VotePage() {
                 <VoteCard
                   key={current.key}
                   song={current.song}
+                  sources={sourceLines(current, snapshot.candidates, snapshot.members, me.id)}
                   forced={forced}
                   onPlay={() => play(current)}
-                  onDone={(direction) => commit(current, SWIPE_SCORES[direction].score)}
+                  onDone={(direction) => {
+                    react(direction);
+                    commit(current, SWIPE_SCORES[direction].score);
+                  }}
                 />
               </div>
               <DirectionLabel direction="right" />

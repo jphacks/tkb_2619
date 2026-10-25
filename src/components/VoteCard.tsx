@@ -24,6 +24,12 @@ function resolveDirection(info: PanInfo): SwipeDirection | null {
   return offset.y > 0 ? "down" : "up";
 }
 
+/** 吹き出しの1行。名前（who）が長いときは名前のあとで折り返す */
+export interface SourceLine {
+  who?: string;
+  text: string;
+}
+
 const BADGE_STYLE: Record<SwipeDirection, string> = {
   up: "border-best text-best",
   right: "border-better text-better",
@@ -34,11 +40,14 @@ const BADGE_STYLE: Record<SwipeDirection, string> = {
 /** スワイプで評価するカード。ボタン操作のときは forced に方向を渡すと同じアニメーションで飛んでいく */
 export default function VoteCard({
   song,
+  sources = [],
   forced,
   onDone,
   onPlay,
 }: {
   song: Song;
+  /** 右上の吹き出しに出す「この曲がどこから来たか」（例: 「幹太が聴いてるよ！」「AIレコメンド」） */
+  sources?: SourceLine[];
   forced: SwipeDirection | null;
   onDone: (direction: SwipeDirection) => void;
   onPlay: () => void;
@@ -102,6 +111,21 @@ export default function VoteCard({
       dragMomentum={false}
       onDragEnd={(_, info) => handleDragEnd(info)}
     >
+      {sources.length > 0 && (
+        <div className="pointer-events-none absolute right-1 top-1 z-20 max-w-[92%]">
+          <div className="rounded-2xl bg-ink px-3 py-1.5 text-[12px] font-bold leading-tight text-app shadow-[0_4px_12px_rgba(0,0,0,0.35)]">
+            {sources.map((line) => (
+              <p key={`${line.who ?? ""}${line.text}`} className="py-0.5">
+                {line.who}
+                {/* 「が聴いてるよ！」は途中で折り返さない */}
+                <span className="inline-block whitespace-nowrap">{line.text}</span>
+              </p>
+            ))}
+          </div>
+          {/* 吹き出しのしっぽ（カードの方を向く） */}
+          <span className="absolute -bottom-1 right-6 h-3 w-3 rotate-45 bg-ink" />
+        </div>
+      )}
       <div className="relative">
         <SongArtwork song={song} className="aspect-square w-full rounded-xl" />
         <button
