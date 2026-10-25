@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import QRCode from "qrcode";
 import { Check, Copy } from "lucide-react";
 import { AppHeader, primaryButton } from "@/components/ui";
 import { roomBackend } from "@/lib/room";
@@ -77,6 +78,19 @@ export default function CreateRoomPage() {
     setConditions((c) => ({ ...c, [key]: value }));
 
   const inviteUrl = room ? `${window.location.origin}${BASE_PATH}/join?room=${room.id}` : "";
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  // 招待URLのQRコード。カメラで読み取りやすいよう、暗い色を明るい背景に描く
+  useEffect(() => {
+    if (!inviteUrl) return;
+    let cancelled = false;
+    QRCode.toDataURL(inviteUrl, { width: 640, margin: 2, errorCorrectionLevel: "M", color: { dark: "#1e1410", light: "#fbefe4" } })
+      .then((url) => !cancelled && setQrDataUrl(url))
+      .catch(() => !cancelled && setQrDataUrl(null));
+    return () => {
+      cancelled = true;
+    };
+  }, [inviteUrl]);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -98,6 +112,86 @@ export default function CreateRoomPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // LINE などの共有シートで送る。共有できないブラウザではコピーにする
+  const handleShare = async () => {
+    if (typeof navigator.share === "function") {
+      await navigator.share({ title: "Musiconnect", text: "選曲ルームに参加してね", url: inviteUrl }).catch(() => undefined);
+    } else {
+      await handleCopy();
+    }
+  };
+
+  // QRコードを画像として保存する。スマホは共有シート（「画像を保存」がある）、それ以外はPNGをダウンロード
+  const handleSaveQr = async () => {
+    if (!qrDataUrl || !room) return;
+    const fileName = `musiconnect-${room.id}.png`;
+    const blob = await (await fetch(qrDataUrl)).blob();
+    const file = new File([blob], fileName, { type: "image/png" });
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], title: "Musiconnect 招待QRコード" }).catch(() => undefined);
+      return;
+    }
+    const link = document.createElement("a");
+    link.href = qrDataUrl;
+    link.download = fileName;
+    link.click();
+  };
+
+  // 作成後は条件を変えられないので、URLを送ることとルームに入ることだけに絞る
+  if (room) {
+    return (
+      <>
+        <AppHeader title="ルームができました" backHref="/" />
+        <main className="flex flex-1 flex-col px-5 pb-8 pt-6">
+          <p className="text-[22px] font-bold leading-snug">
+            招待URLを
+            <br />
+            みんなに送ろう
+          </p>
+
+          <div className="mt-6 flex flex-col items-center gap-2">
+            {qrDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={qrDataUrl} alt="招待URLのQRコード" className="h-56 w-56 rounded-xl" />
+            ) : (
+              <span className="h-56 w-56 rounded-xl bg-surface" />
+            )}
+            <p className="text-[12px] text-muted">その場の人は、カメラでこれを読み取ればOK</p>
+            <button
+              type="button"
+              onClick={handleSaveQr}
+              disabled={!qrDataUrl}
+              className="py-1 text-[14px] font-bold text-accent disabled:opacity-40"
+            >
+              画像を保存
+            </button>
+          </div>
+
+          <div className="mt-4 flex items-center gap-2 border-y border-line py-3">
+            <span className="min-w-0 flex-1 truncate text-[14px] text-muted">{inviteUrl}</span>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="flex shrink-0 items-center gap-1 rounded-lg border-[1.5px] border-accent px-3 py-1.5 text-[13px] font-bold text-accent"
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+              {copied ? "コピーした" : "コピー"}
+            </button>
+          </div>
+          <button type="button" onClick={handleShare} className="mt-3 self-start py-1 text-[14px] font-bold text-accent">
+            LINEなどで送る
+          </button>
+
+          <div className="flex-1" />
+
+          <button type="button" onClick={() => router.push(`/join?room=${room.id}`)} className={`${primaryButton} mt-10`}>
+            ルームに入る
+          </button>
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <AppHeader title="ルームを作成" backHref="/" />
@@ -111,7 +205,6 @@ export default function CreateRoomPage() {
                   key={String(on)}
                   type="button"
                   onClick={() => setAiEnabled(on)}
-                  disabled={Boolean(room)}
                   className={`w-[76px] rounded-lg py-2 text-[14px] font-bold transition ${
                     aiEnabled === on ? "bg-accent text-on-accent" : "text-muted"
                   }`}
@@ -124,7 +217,7 @@ export default function CreateRoomPage() {
           <div className="pb-3" />
 
           {aiEnabled && (
-            <fieldset disabled={Boolean(room)}>
+            <fieldset>
               <p className="border-t border-line pb-1 pt-3 text-[14px] font-bold">集まる人は？</p>
               <ChipRow label="性別" selected={conditions.genders} options={GENDERS} onChange={(v) => set("genders", v)} />
               <ChipRow
@@ -156,36 +249,10 @@ export default function CreateRoomPage() {
           )}
         </section>
 
-        {!room ? (
-          <button type="button" onClick={handleCreate} disabled={creating} className={primaryButton}>
-            {creating ? "作成中…" : "招待URLを作成"}
-          </button>
-        ) : (
-          <button type="button" onClick={() => router.push(`/join?room=${room.id}`)} className={primaryButton}>
-            ルームに入る
-          </button>
-        )}
+        <button type="button" onClick={handleCreate} disabled={creating} className={primaryButton}>
+          {creating ? "作成中…" : "招待URLを作成"}
+        </button>
         {error && <p className="text-center text-[13px] text-heart">{error}</p>}
-
-        {room && (
-          <section className="flex items-center gap-2 border-t border-line pt-4">
-            <span className="shrink-0 text-[14px] font-bold">招待URL</span>
-            <span className="min-w-0 flex-1 truncate rounded-lg bg-app px-3 py-2 text-[13px] text-muted">{inviteUrl}</span>
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="flex shrink-0 items-center gap-1 rounded-lg border-[1.5px] border-accent px-3 py-1.5 text-[13px] font-bold text-accent"
-            >
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? "済" : "コピー"}
-            </button>
-          </section>
-        )}
-        {room && (
-          <p className="text-center text-[12px] text-muted">
-            URLをみんなに送ろう
-          </p>
-        )}
       </main>
     </>
   );
