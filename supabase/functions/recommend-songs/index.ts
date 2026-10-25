@@ -7,6 +7,7 @@
 // 必要な Secrets（Supabase ダッシュボード → Edge Functions → Secrets）
 //   GEMINI_API_KEY  Google AI Studio で発行したキー（必須）
 //   GEMINI_MODEL    使うモデル（任意。既定は gemini-3.5-flash-lite）
+//   ALLOWED_ORIGINS 呼び出しを許すサイト（任意。カンマ区切り。既定は公開サイトとローカル開発）
 
 const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 // 画面で待てる速さを優先して、最速・低コストのモデルを既定にする
@@ -15,17 +16,31 @@ const DEFAULT_MODEL = "gemini-3.5-flash-lite";
 /** 1回あたりの待ち時間。混雑・遅延時は1回だけやり直しても150秒の制限に収まるようにする */
 const ATTEMPT_TIMEOUT_MS = 40_000;
 const RETRY_DELAY_MS = 1_500;
+/** リクエスト本文の上限（アプリが送るのは数KB。大きな本文で処理を重くされないように） */
+const MAX_BODY_BYTES = 32_000;
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+// ほかのサイトのページからこの関数を呼ばれ、Gemini の利用枠を使われないよう、呼び出し元を絞る。
+// （ブラウザ以外からの呼び出しは Origin がないので通るが、Supabase の anon key は必要）
+const DEFAULT_ORIGINS = ["https://jphacks.github.io", "http://localhost:3000", "http://127.0.0.1:3000"];
+const configuredOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+const allowedOrigins = new Set(configuredOrigins.length > 0 ? configuredOrigins : DEFAULT_ORIGINS);
 
-function json(body: unknown, status = 200): Response {
+function corsHeaders(origin: string | null): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": origin && allowedOrigins.has(origin) ? origin : "null",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    Vary: "Origin",
+  };
+}
+
+function json(body: unknown, status: number, origin: string | null): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...corsHeaders(origin), "Content-Type": "application/json" },
   });
 }
 
@@ -48,21 +63,23 @@ interface RecommendRequest {
 const text = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 const strings = (v: unknown, maxItems: number) =>
   Array.isArray(v) ? v.map((x) => text(x, 30)).filter(Boolean).slice(0, maxItems) : [];
+const record = (v: unknown): Record<string, unknown> => (v && typeof v === "object" ? (v as Record<string, unknown>) : {});
 const songRefs = (v: unknown, maxItems: number) =>
   Array.isArray(v)
     ? v
+        .map(record)
         .map((s) => ({
-          title: text(s?.title, 100),
-          artist: text(s?.artist, 100),
-          people: Number.isFinite(s?.people) ? Number(s.people) : 0,
+          title: text(s.title, 100),
+          artist: text(s.artist, 100),
+          people: typeof s.people === "number" && Number.isFinite(s.people) ? s.people : 0,
         }))
         .filter((s) => s.title && s.artist)
         .slice(0, maxItems)
     : [];
 
 function parseRequest(raw: unknown): RecommendRequest {
-  const r = (raw ?? {}) as Record<string, any>;
-  const a = (r.attributes ?? {}) as Record<string, unknown>;
+  const r = record(raw);
+  const a = record(r.attributes);
   return {
     attributes: {
       genders: strings(a.genders, 5),
@@ -129,18 +146,23 @@ const RESPONSE_SCHEMA = {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "POST only" }, 405);
+  const origin = req.headers.get("Origin");
+  const reply = (body: unknown, status = 200) => json(body, status, origin);
+  if (origin && !allowedOrigins.has(origin)) return reply({ error: "このサイトからは呼び出せません" }, 403);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(origin) });
+  if (req.method !== "POST") return reply({ error: "POST only" }, 405);
 
   const apiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!apiKey) return json({ error: "GEMINI_API_KEY が Supabase の Secrets に登録されていません" }, 500);
+  if (!apiKey) return reply({ error: "GEMINI_API_KEY が Supabase の Secrets に登録されていません" }, 500);
   const model = Deno.env.get("GEMINI_MODEL") || DEFAULT_MODEL;
 
   let request: RecommendRequest;
   try {
-    request = parseRequest(await req.json());
+    const body = await req.text();
+    if (new TextEncoder().encode(body).length > MAX_BODY_BYTES) return reply({ error: "リクエストが大きすぎます" }, 413);
+    request = parseRequest(JSON.parse(body));
   } catch {
-    return json({ error: "リクエストのJSONが不正です" }, 400);
+    return reply({ error: "リクエストのJSONが不正です" }, 400);
   }
 
   const payload = JSON.stringify({
@@ -166,7 +188,7 @@ Deno.serve(async (req) => {
     } catch (error) {
       const timedOut = error instanceof DOMException && (error.name === "TimeoutError" || error.name === "AbortError");
       if (timedOut && attempt === 0) continue;
-      return json(
+      return reply(
         { error: timedOut ? "Gemini の応答が時間内に返りませんでした（混雑している可能性があります）" : "Gemini に接続できませんでした" },
         504
       );
@@ -177,20 +199,20 @@ Deno.serve(async (req) => {
     }
     break;
   }
-  if (!res) return json({ error: "Gemini の応答が時間内に返りませんでした（混雑している可能性があります）" }, 504);
+  if (!res) return reply({ error: "Gemini の応答が時間内に返りませんでした（混雑している可能性があります）" }, 504);
 
   if (res.status === 503 || res.status === 429) {
-    return json({ error: "Gemini が混雑しています。少し待ってから「AIに聞き直す」を押してください" }, 503);
+    return reply({ error: "Gemini が混雑しています。少し待ってから「AIに聞き直す」を押してください" }, 503);
   }
   if (!res.ok) {
-    // エラー本文にキーは含まれないが、念のため先頭だけ返す
-    const detail = (await res.text()).slice(0, 300);
-    return json({ error: `Gemini API がエラーを返しました（${res.status}）`, detail }, 502);
+    // 詳しい内容は利用者に見せず、Supabase のログにだけ残す
+    console.error(`Gemini API error ${res.status}: ${(await res.text()).slice(0, 500)}`);
+    return reply({ error: `Gemini API がエラーを返しました（${res.status}）` }, 502);
   }
 
   const data = await res.json();
   const blockReason = data?.promptFeedback?.blockReason;
-  if (blockReason) return json({ error: `Gemini が入力をブロックしました（${blockReason}）` }, 502);
+  if (blockReason) return reply({ error: `Gemini が入力をブロックしました（${blockReason}）` }, 502);
 
   const outputText: string = (data?.candidates?.[0]?.content?.parts ?? [])
     .map((p: { text?: string }) => p.text ?? "")
@@ -199,12 +221,13 @@ Deno.serve(async (req) => {
   try {
     parsed = JSON.parse(outputText);
   } catch {
-    return json({ error: "Gemini の応答をJSONとして読めませんでした", finishReason: data?.candidates?.[0]?.finishReason }, 502);
+    return reply({ error: "Gemini の応答をJSONとして読めませんでした", finishReason: data?.candidates?.[0]?.finishReason }, 502);
   }
 
   const songs = (Array.isArray(parsed.songs) ? parsed.songs : [])
-    .map((s: any) => ({ title: text(s?.title, 100), artist: text(s?.artist, 100), reason: text(s?.reason, 60) }))
-    .filter((s: SongRef) => s.title && s.artist)
+    .map(record)
+    .map((s) => ({ title: text(s.title, 100), artist: text(s.artist, 100), reason: text(s.reason, 60) }))
+    .filter((s) => s.title && s.artist)
     .slice(0, request.count);
-  return json({ songs, model });
+  return reply({ songs, model });
 });

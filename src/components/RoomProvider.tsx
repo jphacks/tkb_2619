@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { Member, RoomSnapshot } from "@/types";
 import { roomBackend } from "@/lib/room";
 import { useRoomIdentity } from "@/lib/room/identity";
+import { isValidRoomId } from "@/lib/room/sanitize";
 import { CATALOG, normalizeKey } from "@/lib/music-source";
 import { applyArtistMeta, lookupArtistMeta } from "@/lib/music-source/musicbrainz";
 import { canonicalArtist } from "@/lib/music-source/normalize";
@@ -113,7 +114,8 @@ function Message({ title, body, roomId }: { title: string; body: string; roomId?
 
 export default function RoomProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const roomId = useSearchParams().get("room");
+  const rawRoomId = useSearchParams().get("room");
+  const roomId = isValidRoomId(rawRoomId) ? rawRoomId : null;
   const identity = useRoomIdentity(roomId);
   const { state, refresh } = useRoomSnapshot(roomId);
 
@@ -151,7 +153,7 @@ export default function RoomProvider({ children }: { children: React.ReactNode }
     };
   }, [snapshot, me, roomId, state, identity, refresh]);
 
-  if (!roomId) return <Message title="ルームが指定されていません" body="招待URLをもう一度開いてください。" />;
+  if (!roomId) return <Message title="招待URLが正しくありません" body="招待URLをもう一度開いてください。" />;
   if (state?.status === "missing")
     return (
       <Message

@@ -1,5 +1,6 @@
 import type { RoomSnapshot } from "@/types";
-import { generateMemberId, generateRoomId, parseConditions, type RoomBackend } from "./backend";
+import { generateMemberId, generateRoomId, type RoomBackend } from "./backend";
+import { parseAiPicks, parseConditions } from "./sanitize";
 
 /**
  * Supabase未設定時のローカル用バックエンド。
@@ -37,7 +38,7 @@ function load(roomId: string): RoomSnapshot | null {
     room: {
       ...snapshot.room,
       conditions: parseConditions(snapshot.room.conditions),
-      aiPicks: Array.isArray(snapshot.room.aiPicks) ? snapshot.room.aiPicks : [],
+      aiPicks: parseAiPicks(snapshot.room.aiPicks),
     },
   };
 }

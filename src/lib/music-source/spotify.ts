@@ -1,4 +1,5 @@
 import type { Song } from "@/types";
+import { BASE_PATH } from "@/lib/config";
 import { canonicalArtist, colorsForId, generationsForYear, normalizeKey, parseYear } from "./normalize";
 
 /**
@@ -15,9 +16,8 @@ import { canonicalArtist, colorsForId, generationsForYear, normalizeKey, parseYe
  */
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || "135ab4d9cb254a939e6b4909e641e0ca";
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const SCOPES = ["user-top-read"];
-const PKCE_STORAGE_KEY = "music-bridge-spotify-pkce";
+const PKCE_STORAGE_KEY = "musicconnect-spotify-pkce";
 
 export class SpotifyError extends Error {}
 

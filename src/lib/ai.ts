@@ -1,7 +1,7 @@
 import { AGE_GROUPS, GENDERS, GENRES, NATIONALITIES, type AiPick, type RoomSnapshot, type Song } from "@/types";
 import { CATALOG, canonicalArtist, normalizeKey } from "@/lib/music-source";
 import { searchItunes } from "@/lib/music-source/itunes";
-import { colorsForId } from "@/lib/music-source/normalize";
+import { colorsForId, looseText } from "@/lib/music-source/normalize";
 import { invokeEdgeFunction } from "@/lib/room/supabase";
 import { isSupabaseConfigured } from "@/lib/config";
 import type { PoolItem } from "@/lib/logic/ranking";
@@ -17,8 +17,6 @@ interface FunctionResponse {
 const labelsOf = <T extends string>(ids: T[], options: { id: T; label: string }[]) =>
   ids.map((id) => options.find((o) => o.id === id)?.label ?? id);
 
-const looseKey = (s: string) => s.toLowerCase().replace(/[\s'’"“”.,!?・\-–—()（）[\]［］]/g, "");
-
 /**
  * AIが挙げた曲を、カタログか iTunes で実在の曲に照らし合わせる（ジャケット・年・ジャンルを付けるため）。
  * 見つからない曲も、AIが答えた曲名のまま候補に入れる。
@@ -27,16 +25,16 @@ async function resolveSong(title: string, artist: string): Promise<Song> {
   const fromCatalog = CATALOG.find((s) => normalizeKey(s) === normalizeKey({ title, artist }));
   if (fromCatalog) return fromCatalog;
 
-  const wantedTitle = looseKey(title);
-  const wantedArtist = looseKey(canonicalArtist(artist));
+  const wantedTitle = looseText(title);
+  const wantedArtist = looseText(canonicalArtist(artist));
   const results = await searchItunes(`${title} ${artist}`, 5).catch(() => []);
   const sameTitle = results.filter((s) => {
-    const t = looseKey(s.title);
+    const t = looseText(s.title);
     return t === wantedTitle || t.startsWith(wantedTitle) || wantedTitle.startsWith(t);
   });
   const match =
     sameTitle.find((s) => {
-      const a = looseKey(canonicalArtist(s.artist));
+      const a = looseText(canonicalArtist(s.artist));
       return a.includes(wantedArtist) || wantedArtist.includes(a);
     }) ?? sameTitle[0];
   if (match) return match;

@@ -1,5 +1,5 @@
 import type { Song } from "@/types";
-import { canonicalArtist, normalizeKey } from "./normalize";
+import { canonicalArtist, looseText, normalizeKey } from "./normalize";
 
 /**
  * 30秒の試聴音源（Apple の iTunes プレビュー）を探す。認証不要・ブラウザから直接呼べる。
@@ -36,14 +36,11 @@ function writeCache(key: string, url: string | null) {
   }
 }
 
-/** 表記ゆれ（大文字小文字・空白・記号）を無視して比べる */
-const loose = (text: string) => text.toLowerCase().replace(/[\s\-・'’"“”.,!?！？()（）[\]【】]/g, "");
-
 function matches(result: ItunesResult, song: Pick<Song, "title" | "artist">): boolean {
-  const a = loose(canonicalArtist(result.artistName));
-  const b = loose(canonicalArtist(song.artist));
-  const t1 = loose(result.trackName);
-  const t2 = loose(song.title);
+  const a = looseText(canonicalArtist(result.artistName));
+  const b = looseText(canonicalArtist(song.artist));
+  const t1 = looseText(result.trackName);
+  const t2 = looseText(song.title);
   return (a.includes(b) || b.includes(a)) && (t1.startsWith(t2) || t2.startsWith(t1));
 }
 
@@ -55,7 +52,8 @@ async function fetchResults(url: string): Promise<ItunesResult[]> {
 
 async function find(song: Song): Promise<string | null> {
   if (song.id.startsWith("itunes:")) {
-    const [hit] = await fetchResults(`https://itunes.apple.com/lookup?id=${song.id.slice(7)}&country=JP`);
+    const params = new URLSearchParams({ id: song.id.slice(7), country: "JP" });
+    const [hit] = await fetchResults(`https://itunes.apple.com/lookup?${params}`);
     if (hit?.previewUrl) return hit.previewUrl;
   }
   const params = new URLSearchParams({
@@ -69,7 +67,7 @@ async function find(song: Song): Promise<string | null> {
   const results = (await fetchResults(`https://itunes.apple.com/search?${params}`)).filter((r) => r.previewUrl);
   // 日本のストアでは海外アーティストがカタカナ表記（Queen → クイーン）になるため、
   // アーティスト名が一致しなくても、曲名が完全に同じなら採用する（検索語にアーティスト名を入れているので、上位はほぼ本人）
-  const exact = results.find((r) => matches(r, song)) ?? results.find((r) => loose(r.trackName) === loose(song.title));
+  const exact = results.find((r) => matches(r, song)) ?? results.find((r) => looseText(r.trackName) === looseText(song.title));
   return exact?.previewUrl ?? null;
 }
 

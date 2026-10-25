@@ -38,6 +38,11 @@ export function normalizeKey(song: Pick<Song, "title" | "artist">): string {
   return `${song.title.trim().toLowerCase()}__${canonicalArtist(song.artist).toLowerCase()}`;
 }
 
+/** 表記ゆれ（大文字小文字・空白・記号）を無視して比べるための文字列 */
+export function looseText(text: string): string {
+  return text.toLowerCase().replace(/[\s'’"“”.,!?！？・\-–—()（）[\]［］【】]/g, "");
+}
+
 // 上から順に判定する（"city pop" を "pop" より先に見るなど、順序に意味がある）
 const GENRE_RULES: { genre: Genre; keywords: string[] }[] = [
   { genre: "citypop", keywords: ["city pop"] },
